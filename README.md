@@ -14,6 +14,8 @@ https://github.com/moonxi2005/world-info-mobile-layout
 
 如果已经安装旧的独立版本，请先在扩展管理中禁用以下四个旧扩展，再刷新：楼层快速导航、TopInfoBar Mobile Fix、提示词拆分 · 宽屏双栏、世界书 · 手机布局优化。同功能同时启用可能重复加载或导致样式覆盖。
 
+本仓库的安装目录与旧的“世界书 · 手机布局优化”同名。如果安装器提示目录已存在，请先卸载旧世界书布局插件，再安装合集。只卸载插件本身，不要清除酒馆用户设置。
+
 顶栏增强需要另外安装原版 [Chat Top Bar](https://github.com/SillyTavern/Extension-TopInfoBar)；保留这个原版插件，不要禁用。
 
 ## 包含功能
