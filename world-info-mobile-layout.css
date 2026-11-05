@@ -1,26 +1,46 @@
 /* Phone only; do not apply to a desktop's narrow window or tablet split view. */
 @media screen and (max-width: 600px) and (max-device-width: 600px) and (pointer: coarse) {
-    #WorldInfo { padding: 10px 8px; box-sizing: border-box; }
+    #WorldInfo { padding: 6px 8px; box-sizing: border-box; font-size: 14px; }
     #WorldInfo #wi-holder { margin: 0; min-width: 0; }
     #world_popup { width: 100%; min-width: 0; }
-    #WorldInfo :is(input.text_pole, select.text_pole, textarea.text_pole) { font-size: 16px; box-sizing: border-box; }
-    #WorldInfo .menu_button { box-shadow: none; min-height: 34px; box-sizing: border-box; border-radius: 8px; }
-    #world_popup > .flex-container { gap: 6px; margin-bottom: 8px; }
+    #WorldInfo :is(input.text_pole, select.text_pole, textarea.text_pole) { font-size: 14px !important; box-sizing: border-box; }
+    #WorldInfo .menu_button { box-shadow: none !important; text-shadow: none; min-height: 28px !important; height: 28px; padding: 3px 6px !important; margin: 0; font-size: 14px !important; line-height: 20px; box-sizing: border-box; border-radius: 6px; }
+    #WorldInfo > .flex-container h3 { font-size: 18px; margin: 2px 0; }
+    #WorldInfo #wiTopBlock { gap: 6px; }
+    #WorldInfo #wiTopBlock small { font-size: 12px; }
+    #WorldInfo #wiTopBlock .standoutHeader { min-height: 30px !important; padding: 5px 8px !important; margin: 0 0 6px; font-size: 13px !important; line-height: 20px; box-shadow: none !important; border-radius: 7px; }
+    #WorldInfo #wiTopBlock .standoutHeader :is(b, span, .inline-drawer-icon) { font-size: 13px !important; }
+    #WorldInfo #wiTopBlock .select2-container { min-width: 0; max-width: 100%; font-size: 13px; }
+    #WorldInfo #wiTopBlock .select2-selection--multiple { min-height: 32px !important; padding: 3px 5px !important; border-radius: 7px; }
+    #WorldInfo #wiTopBlock .select2-selection__choice { margin: 2px 4px 2px 0 !important; font-size: 13px !important; line-height: 22px; }
+    #WorldInfo #wiTopBlock .select2-search__field { font-size: 14px !important; min-height: 22px; margin: 0; }
+    #WorldInfo #wiActivationSettings { font-size: 12px; gap: 6px; }
+    #WorldInfo #wiActivationSettings :is(h4, h5, label) { font-size: 12px; margin: 2px 0; }
+    #WorldInfo #wiActivationSettings :is(input[type="number"], select) { height: 28px; min-height: 28px; padding: 2px 5px; font-size: 13px !important; }
+    #world_popup > hr { margin: 6px 0; }
+    #world_popup > .flex-container { gap: 4px; margin-bottom: 6px; }
     /* Book name has its own line; creation and file actions stay below it. */
     #world_popup > .flex-container:has(> #world_editor_select) { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
     #world_popup > .flex-container:has(> #world_editor_select) > small { display: none; }
     #world_popup :is(#world_editor_select, #world_editor_select + .select2-container) { grid-row: 1; grid-column: 1 / -1; width: 100% !important; max-width: 100% !important; min-width: 0 !important; margin: 0; }
-    #world_popup #world_editor_select { height: 38px; }
+    #world_popup #world_editor_select { height: 30px; min-height: 30px; font-size: 14px !important; padding: 3px 6px; }
+    #world_popup #world_editor_select + .select2-container .select2-selection--single { height: 30px; min-height: 30px; font-size: 14px; }
+    #world_popup #world_editor_select + .select2-container .select2-selection__rendered { line-height: 28px; padding-left: 6px; }
+    #world_popup #world_editor_select + .select2-container .select2-selection__arrow { height: 28px; }
     #world_create_button { grid-column: span 2; white-space: nowrap; justify-content: center; }
     #world_popup :is(#world_import_button, #world_popup_export, #world_popup_name_button, #world_duplicate, #world_popup_delete) { width: 100%; margin: 0; display: flex; align-items: center; justify-content: center; }
     /* Entry tools, then full-width search/sort, then pagination. */
     #world_popup > .flex-container:has(> #world_info_search) { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; }
     #world_popup > .flex-container:has(> #world_info_search) > .menu_button { width: 100%; margin: 0; display: flex; align-items: center; justify-content: center; }
-    #world_popup #world_info_search { grid-column: 1 / 4; width: 100%; max-width: none; min-width: 0; margin: 0; height: 36px; }
-    #world_popup #world_info_sort_order { grid-column: 4 / 6; width: 100%; max-width: none; min-width: 0; margin: 0; height: 36px; font-size: 13px; }
+    #world_popup #world_info_search { grid-column: 1 / 4; width: 100%; max-width: none; min-width: 0; margin: 0; height: 28px; padding: 3px 6px; }
+    #world_popup #world_info_sort_order { grid-column: 4 / 6; width: 100%; max-width: none; min-width: 0; margin: 0; height: 28px; font-size: 13px !important; padding: 3px 6px; }
     #world_info_pagination { grid-column: 2 / -1; min-width: 0; font-size: 12px; }
     #world_info_pagination .paginationjs { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
     #world_info_pagination select { max-width: 100%; font-size: 13px; }
+    #WorldInfo #world_info_pagination :is(select, input) { height: 26px; min-height: 26px; font-size: 12px !important; padding: 2px 4px; }
+    #WorldInfo #world_info_pagination .paginationjs-pages li { min-width: 24px; height: 26px; }
+    #WorldInfo #world_info_pagination .paginationjs-pages li > a { min-width: 24px; height: 24px; line-height: 24px; font-size: 12px; }
+    #WorldInfo #world_info_pagination :is(.paginationjs-nav, .paginationjs-size-changer) { font-size: 12px; line-height: 26px; }
     #world_popup_entries_list { padding: 2px 0 12px; }
     #world_popup_entries_list .world_entry { margin: 0 0 6px; min-width: 0; }
     #world_popup_entries_list .world_entry_form { padding: 0 !important; border-radius: 12px; overflow: hidden; }
