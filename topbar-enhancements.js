@@ -244,6 +244,25 @@
         historyPreview.style.left = `${Math.max(8, Math.min(left, innerWidth - width - 8))}px`;
         historyPreview.style.top = `${Math.max(8, Math.min(top, innerHeight - height - 8))}px`;
     }
+    const historySearch = document.createElement('input');
+    historySearch.type = 'search';
+    historySearch.className = 'text_pole tib-history-search';
+    historySearch.placeholder = '搜索聊天名或总结…';
+    historySearch.setAttribute('aria-label', '搜索聊天记录');
+    const historyRows = document.createElement('div');
+    panel.append(historySearch, historyRows);
+    const pageSize = 60;
+    let historyLimit = pageSize;
+    historySearch.addEventListener('input', () => {
+        historyLimit = pageSize;
+        panel.scrollTop = 0;
+        renderHistory();
+    });
+    historySearch.addEventListener('keydown', event => {
+        if (event.key !== 'Enter' || event.isComposing) return;
+        event.preventDefault();
+        historyRows.querySelector('.tib-history-row')?.click();
+    });
     const firstMessageCache = new Map();
     function firstMessageText(messages) {
         const first = messages.find(m => !m.is_system && typeof m.mes === 'string');
@@ -330,16 +349,38 @@
     function renderHistory() {
         const select = document.getElementById('extensionTopBarChatName');
         if (!select) return;
-        hideHistoryPreview(); panel.replaceChildren();
-        for (const option of select.options) {
+        hideHistoryPreview(); historyRows.replaceChildren();
+        const terms = historySearch.value.normalize('NFKC').toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);
+        const owner = scope(), summaries = settings().summaries;
+        const matches = [...select.options].filter(option => {
+            if (!option.value) return false;
+            if (!terms.length) return true;
+            const text = `${option.textContent} ${summaries[key(owner, option.value)]?.text ?? ''}`.normalize('NFKC').toLocaleLowerCase();
+            return terms.every(term => text.includes(term));
+        });
+        for (const option of matches.slice(0, historyLimit)) {
             const row = button(option.textContent, '', () => {
                 closeHistory();
-                if (select.value !== option.value) { select.value = option.value; select.dispatchEvent(new Event('change', { bubbles: true })); }
+                if (stripExt(ctx().getCurrentChatId?.()) !== stripExt(option.value)) { select.value = option.value; select.dispatchEvent(new Event('change', { bubbles: true })); }
             });
             row.classList.add('tib-history-row'); row.classList.toggle('tib-selected', option.selected);
             const detail = document.createElement('span'); detail.className = 'tib-history-summary';
-            row.append(detail); panel.append(row);
+            row.append(detail); historyRows.append(row);
             attachPreview(row, option.value, detail);
+        }
+        if (!matches.length) {
+            const empty = document.createElement('p');
+            empty.className = 'tib-history-empty';
+            empty.textContent = '没有匹配的聊天记录';
+            historyRows.append(empty);
+        } else if (matches.length > historyLimit) {
+            const more = button(`显示更多（${historyLimit} / ${matches.length}）`, '', () => {
+                const scroll = panel.scrollTop;
+                historyLimit += pageSize;
+                renderHistory();
+                panel.scrollTop = scroll;
+            });
+            historyRows.append(more);
         }
         positionHistory();
     }
@@ -369,8 +410,11 @@
             selectObserver?.disconnect(); historyButton?.remove();
             historyButton = button('聊天记录 ▾', '悬停聊天记录查看总结', () => {
                 panel.hidden = !panel.hidden; historyButton.setAttribute('aria-expanded', String(!panel.hidden));
-                if (!panel.hidden) renderHistory();
-                else hideHistoryPreview();
+                if (!panel.hidden) {
+                    historySearch.value = '';
+                    historyLimit = pageSize;
+                    renderHistory();
+                } else hideHistoryPreview();
             });
             historyButton.id = 'tib-history-button'; historyButton.setAttribute('aria-expanded', 'false');
             select.insertAdjacentElement('afterend', historyButton); select.classList.add('tib-enhanced-select');
@@ -396,11 +440,11 @@
         if (job?.owner === owner && job.name === oldName) job.name = newName;
         refreshTitles();
     });
-    if (c.event_types?.CHAT_CHANGED) c.eventSource.on(c.event_types.CHAT_CHANGED, () => { closeHistory(); setTimeout(enhance, 150); });
+    if (c.event_types?.CHAT_CHANGED) c.eventSource.on(c.event_types.CHAT_CHANGED, () => { closeHistory(); refreshTitles(); });
     let timer;
     new MutationObserver(records => {
         // Ignore our own surfaces, preventing observer feedback loops.
-        if (!records.some(r => !r.target.closest?.('#tib-history-panel, #tib-history-button, #tib-summary-button, .tib-tags') && [...r.addedNodes, ...r.removedNodes].some(n => n.nodeType === 1))) return;
+        if (!records.some(r => !r.target.closest?.('#tib-history-panel, #tib-history-button, #tib-summary-button, .tib-tags, #chat') && [...r.addedNodes, ...r.removedNodes].some(n => n.nodeType === 1))) return;
         clearTimeout(timer); timer = setTimeout(enhance, 120);
     }).observe(document.body, { childList: true, subtree: true });
     // Earlier versions mistook an API error string for a valid summary.

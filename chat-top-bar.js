@@ -136,57 +136,67 @@ function patchSheldIfNeeded() {
     }
 }
 
-function setChatName(name) {
-    const isNotInChat = !name;
-    chatName.innerHTML = '';
-    const selectedOption = document.createElement('option');
-    selectedOption.innerText = name || t`No chat selected`;
-    selectedOption.selected = true;
-    chatName.appendChild(selectedOption);
-    chatName.disabled = true;
+// Cache names by character and share requests while a list is loading.
+const chatNamesCache = new Map();
+let chatListRevision = 0;
+let switchingChat = false;
+let listOwner;
+let sidebarSnapshot;
 
-    icons.forEach(icon => {
-        const iconElement = document.getElementById(icon.id);
-        if (iconElement && !icon.isTemporaryAllowed) {
-            iconElement.classList.toggle('not-in-chat', isNotInChat);
+async function setChatName(name) {
+    const revision = ++chatListRevision;
+    const context = SillyTavern.getContext();
+    const avatar = context.characters?.[context.characterId]?.avatar;
+    const groupId = context.groupId;
+    const owner = groupId ? `group:${groupId}` : `character:${avatar ?? ''}`;
+    if (owner !== listOwner) {
+        listOwner = owner;
+        chatName.replaceChildren();
+    }
+    for (const icon of icons) {
+        if (!icon.isTemporaryAllowed) document.getElementById(icon.id)?.classList.toggle('not-in-chat', !name);
+    }
+    if (!name) {
+        const placeholder = new Option(t`No chat selected`, '');
+        chatName.replaceChildren(placeholder);
+        chatName.disabled = true;
+        void populateSideBar();
+        return;
+    }
+    if (![...chatName.options].some(option => option.value === name)) {
+        sidebarSnapshot = undefined;
+        chatName.add(new Option(name, name));
+    }
+    chatName.value = name;
+    chatName.disabled = false;
+
+    let names = [];
+    if (groupId) {
+        names = context.groups?.find(group => String(group.id) === String(groupId))?.chats ?? [];
+    } else if (avatar) {
+        let cached = chatNamesCache.get(avatar);
+        if (!cached || (!cached.pending && (Date.now() - cached.time > 60000 || !cached.names.includes(name)))) {
+            const record = { pending: true, time: Date.now(), names: [] };
+            record.promise = getListOfCharacterChats(avatar).then(result => {
+                record.pending = false;
+                record.names = result;
+                return result;
+            });
+            chatNamesCache.set(avatar, record);
+            cached = record;
         }
-    });
-
-    if (!isNotInChat && typeof openGroupChat === 'function' && typeof openCharacterChat === 'function') {
-        setTimeout(async () => {
-            const list = [];
-            const context = SillyTavern.getContext();
-            if (context.groupId) {
-                const group = context.groups.find(x => x.id == context.groupId);
-                if (group) {
-                    list.push(...group.chats);
-                }
-            }
-            else {
-                const characterAvatar = context.characters[context.characterId]?.avatar;
-                list.push(...await getListOfCharacterChats(characterAvatar));
-            }
-
-            if (list.length > 0) {
-                chatName.innerHTML = '';
-                list.sort((a, b) => a.localeCompare(b)).forEach((x) => {
-                    const option = document.createElement('option');
-                    option.innerText = x;
-                    option.value = x;
-                    option.selected = x === name;
-
-                    chatName.appendChild(option);
-                });
-                chatName.disabled = false;
-            }
-
-            await populateSideBar();
-        }, 0);
+        names = await cached.promise;
     }
-
-    if (isNotInChat) {
-        setTimeout(() => populateSideBar(), 0);
+    const active = SillyTavern.getContext();
+    if (revision !== chatListRevision || getCurrentChatId() !== name
+        || active.groupId !== groupId || active.characters?.[active.characterId]?.avatar !== avatar) return;
+    const sorted = [...new Set([...names, name])].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    const previous = [...chatName.options];
+    if (previous.length !== sorted.length || sorted.some((id, index) => previous[index].value !== id)) {
+        chatName.replaceChildren(...sorted.map(id => new Option(id, id)));
     }
+    chatName.value = name;
+    void populateSideBar();
 }
 
 /**
@@ -207,7 +217,7 @@ async function getListOfCharacterChats(avatar) {
         }
 
         const data = await result.json();
-        return data.map(x => String(x.file_name).replace('.jsonl', ''));
+        return data.map(x => String(x.file_name).replace(/\.jsonl$/i, ''));
     } catch (error) {
         console.error('Failed to get list of character chats', error);
         return [];
@@ -245,11 +255,11 @@ function searchInChat(query) {
     if (!query) {
         return;
     }
-    const splitQuery = query.split(/\s|\b/);
+    const splitQuery = [...new Set(query.split(/\s+/u).filter(Boolean))];
     messages.highlight(splitQuery, options);
 }
 
-const searchDebounced = debounce((x) => searchInChat(x), 500);
+const searchDebounced = debounce((x) => searchInChat(x), 180);
 const updateStatusDebounced = debounce(onOnlineStatusChange, 1000);
 
 function addTopBar() {
@@ -423,33 +433,41 @@ async function populateSideBar() {
     loader.classList.add('displayNone');
     const processId = uuidv4();
     const scrollTop = container.scrollTop;
-    const prettify = x => {
-        x.last_mes = timestampToMoment(x.last_mes);
-        x.file_name = String(x.file_name).replace('.jsonl', '');
-        return x;
-    };
+    const prettify = x => ({ ...x, last_mes: timestampToMoment(x.last_mes), file_name: String(x.file_name).replace(/\.jsonl$/i, '') });
     container.dataset.processId = processId;
     const chatId = getCurrentChatId();
-    const chats = (await getChatFiles()).map(prettify).sort((a, b) => sortMoments(a.last_mes, b.last_mes));
+    const owner = listOwner;
+    if (!sidebarSnapshot || sidebarSnapshot.owner !== owner || Date.now() - sidebarSnapshot.time > 30000) {
+        const snapshot = { owner, time: Date.now() };
+        snapshot.promise = getChatFiles().then(files => files.map(prettify).sort((a, b) => sortMoments(a.last_mes, b.last_mes))).catch(error => {
+            if (sidebarSnapshot === snapshot) sidebarSnapshot = undefined;
+            console.warn('[Chat Top Bar] 历史列表加载失败', error);
+            return [];
+        });
+        sidebarSnapshot = snapshot;
+    }
+    const snapshot = sidebarSnapshot;
+    const chats = await snapshot.promise;
 
-    if (container.dataset.processId !== processId) {
+    if (!sidebar.classList.contains('visible') || container.dataset.processId !== processId || chatId !== getCurrentChatId() || owner !== listOwner) {
         console.log(t`Aborting populateSideBar due to process id mismatch`);
         return;
     }
 
-    container.innerHTML = '';
+    if (container.dataset.snapshot === snapshot.id && container.childElementCount) {
+        for (const item of container.children) item.classList.toggle('selected', item.dataset.chatId === chatId);
+        return;
+    }
+    snapshot.id ??= processId;
+    container.dataset.snapshot = snapshot.id;
+    container.replaceChildren();
 
     for (const chat of chats) {
         const sideBarItem = document.createElement('div');
         sideBarItem.classList.add('sideBarItem');
+        sideBarItem.dataset.chatId = chat.file_name;
 
         sideBarItem.addEventListener('click', async () => {
-            if (chat.file_name === chatId || sideBarItem.classList.contains('selected')) {
-                return;
-            }
-
-            container.childNodes.forEach(x => x instanceof HTMLElement && x.classList.remove('selected'));
-            sideBarItem.classList.add('selected');
             await openChatById(chat.file_name);
         });
 
@@ -516,20 +534,24 @@ async function populateSideBar() {
 }
 
 async function openChatById(chatId) {
+    if (!chatId || switchingChat || chatId === getCurrentChatId()) {
+        chatName.value = getCurrentChatId() ?? '';
+        return;
+    }
     const context = SillyTavern.getContext();
-
-    if (!chatId) {
-        return;
-    }
-
-    if (typeof openGroupChat === 'function' && context.groupId) {
-        await openGroupChat(context.groupId, chatId);
-        return;
-    }
-
-    if (typeof openCharacterChat === 'function' && context.characterId !== undefined) {
-        await openCharacterChat(chatId);
-        return;
+    switchingChat = true;
+    try {
+        if (typeof openGroupChat === 'function' && context.groupId) {
+            await openGroupChat(context.groupId, chatId);
+        } else if (typeof openCharacterChat === 'function' && context.characterId !== undefined) {
+            await openCharacterChat(chatId);
+        }
+    } catch (error) {
+        console.warn('[Chat Top Bar] 打开聊天失败', error);
+        window.toastr?.error('打开聊天失败');
+    } finally {
+        switchingChat = false;
+        chatName.value = getCurrentChatId() ?? '';
     }
 }
 
@@ -680,9 +702,13 @@ function restorePanelsState() {
     addConnectionProfiles();
     setChatName(getCurrentChatId());
     chatName.addEventListener('change', onChatNameChange);
-    const setChatNameDebounced = debounce(() => setChatName(getCurrentChatId()), debounce_timeout.short);
-    for (const eventName of [event_types.CHAT_CHANGED, event_types.CHAT_DELETED, event_types.GROUP_CHAT_DELETED]) {
-        eventSource.on(eventName, setChatNameDebounced);
+    if (event_types.CHAT_CHANGED) eventSource.on(event_types.CHAT_CHANGED, () => void setChatName(getCurrentChatId()));
+    for (const eventName of ['CHAT_DELETED', 'GROUP_CHAT_DELETED', 'CHAT_RENAMED']) {
+        if (event_types[eventName]) eventSource.on(event_types[eventName], () => {
+            chatNamesCache.clear();
+            sidebarSnapshot = undefined;
+            void setChatName(getCurrentChatId());
+        });
     }
     bindConnectionProfilesSelect();
     restorePanelsState();

@@ -22,6 +22,8 @@
 #extensionTopBarChatName.tib-enhanced-select { display: none !important; }
 #tib-history-button { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; min-width: 64px; }
 #tib-history-panel { position: fixed; z-index: 10000; box-sizing: border-box; padding: 6px; overflow-y: auto; overscroll-behavior: contain; border: 1px solid #8886; border-radius: 10px; background: var(--SmartThemeBlurTintColor, #262626); color: var(--SmartThemeBodyColor, #eee); box-shadow: 0 8px 32px #0005; backdrop-filter: blur(16px); }
+#tib-history-panel .tib-history-search { position: sticky; top: 0; z-index: 1; width: 100%; box-sizing: border-box; margin: 0 0 4px; background: var(--SmartThemeBlurTintColor, #262626); }
+#tib-history-panel .tib-history-empty { padding: 6px 10px; opacity: .75; }
 #tib-history-panel[hidden] { display: none !important; }
 #tib-history-panel .tib-history-row { display: block; width: 100%; padding: 9px 10px; margin: 2px 0; text-align: left; overflow-wrap: anywhere; border: 1px solid transparent; white-space: normal; }
 #tib-history-panel .tib-history-row:hover, #tib-history-panel .tib-history-row:focus-visible, #tib-history-panel .tib-selected { background: #8882; border-color: #8884; }
