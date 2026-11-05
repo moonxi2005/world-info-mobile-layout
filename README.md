@@ -16,9 +16,11 @@ https://github.com/moonxi2005/world-info-mobile-layout
 
 本仓库的安装目录与旧的“世界书 · 手机布局优化”同名。如果安装器提示目录已存在，请先卸载旧世界书布局插件，再安装合集。只卸载插件本身，不要清除酒馆用户设置。
 
-顶栏增强需要另外安装原版 [Chat Top Bar](https://github.com/SillyTavern/Extension-TopInfoBar)；保留这个原版插件，不要禁用。
+合集已内置 Chat Top Bar。已安装原版 Chat Top Bar 的用户，请在扩展管理中禁用原版并刷新，由合集的「顶栏增强与聊天总结」开关统一控制。
 
 ## 包含功能
+
+在「扩展设置 → 酒馆界面优化合集」管理四项功能，修改开关后刷新。
 
 ### 楼层导航
 
@@ -49,3 +51,7 @@ https://github.com/moonxi2005/world-info-mobile-layout
 总结功能仅在点击时向选定连接发送整理后的聊天材料；模型服务可能拒绝内容，需使用支持相应内容的模型及连接。首条消息预览只读取本地聊天接口，不调用模型。
 
 不同主题和酒馆版本可能影响布局。禁用合集并刷新即可恢复原界面。扩展管理中的更新按钮可获取后续版本。
+
+### 顶栏来源
+
+内置顶栏基于 [SillyTavern/Extension-TopInfoBar](https://github.com/SillyTavern/Extension-TopInfoBar)（Cohee1207，提交 `930be54913d90abd90ebd698ddd81affa924e2e1`）。`chat-top-bar.js` 调整了初始化与连接配置同步，原版样式和 jQuery 高亮辅助文件随附。许可见 `LICENSE-Chat-Top-Bar`。

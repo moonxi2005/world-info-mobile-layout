@@ -7,7 +7,7 @@ async function startToolkit() {
     const enabled = settings.modules ??= {};
     const features = [
         { id: 'floor-navigator', name: '楼层快速导航', description: '聊天左侧的楼层列表、摘要预览和拖动定位。', action: '重置楼层位置', event: 'reset-floor-position' },
-        { id: 'topbar-enhancements', name: '顶栏增强与聊天总结', description: '聊天改名快捷词、总结和历史预览。顶栏按钮需要原版 Chat Top Bar。', action: '快捷词与总结设置', event: 'topbar-settings' },
+        { id: 'topbar-enhancements', name: '顶栏增强与聊天总结', description: '聊天记录下拉和侧栏、改名快捷词、总结与悬停预览。', action: '快捷词与总结设置', event: 'topbar-settings' },
         { id: 'prompt-itemization-wide', name: '提示词拆分双栏', description: '在电脑窗口内并排查看统计和提示词正文。' },
         { id: 'world-info-mobile-layout', name: '手机世界书布局', description: '紧凑总控、页内选书和条目编辑排版。' },
     ];
@@ -80,6 +80,7 @@ async function startToolkit() {
                 stylesheet.addEventListener('error', reject, { once: true });
                 document.head.append(stylesheet);
             });
+            if (feature.id === 'topbar-enhancements') await import('./chat-top-bar.js');
             await import(`./${feature.id}.js`);
             loaded.add(feature.id);
             const action = actions.get(feature.id);
