@@ -1,0 +1,248 @@
+/*
+ * Chat Top Info Bar — Mobile Layout Fix
+ * Companion patch for SillyTavern/Extension-TopInfoBar
+ *
+ * Keep the desktop layout unchanged. On narrow screens:
+ * 1. Prevent flex-wrap from creating a second row.
+ * 2. Keep every action button on one horizontal rail.
+ * 3. Let the rail scroll horizontally only when the viewport is too narrow.
+ * 4. Shrink touch targets modestly while keeping them usable.
+ */
+
+/* Rename shortcuts and summary controls. Existing mobile rules remain below. */
+.tib-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; align-items: center; }
+.tib-action { appearance: none; display: inline-flex; align-items: center; justify-content: center; width: auto; min-height: 30px; padding: 4px 8px; margin: 0; font: inherit; cursor: pointer; color: inherit; background: transparent; border: 0; border-radius: 4px; box-shadow: none; text-shadow: none; }
+.tib-action:hover { background: #8882; }
+.tib-action:focus-visible { outline: 1px solid currentColor; outline-offset: -2px; }
+.tib-action:disabled { opacity: .5; cursor: default; }
+.tib-field { display: flex; flex-direction: column; gap: 5px; margin: 12px 0; text-align: left; }
+.tib-settings p { font-size: .85em; opacity: .8; line-height: 1.6; text-align: left; }
+#extensionTopBarChatName.tib-enhanced-select { display: none !important; }
+#tib-history-button { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; min-width: 64px; }
+#tib-history-panel { position: fixed; z-index: 10000; box-sizing: border-box; padding: 6px; overflow-y: auto; overscroll-behavior: contain; border: 1px solid #8886; border-radius: 10px; background: var(--SmartThemeBlurTintColor, #262626); color: var(--SmartThemeBodyColor, #eee); box-shadow: 0 8px 32px #0005; backdrop-filter: blur(16px); }
+#tib-history-panel[hidden] { display: none !important; }
+#tib-history-panel .tib-history-row { display: block; width: 100%; padding: 9px 10px; margin: 2px 0; text-align: left; overflow-wrap: anywhere; border: 1px solid transparent; white-space: normal; }
+#tib-history-panel .tib-history-row:hover, #tib-history-panel .tib-history-row:focus-visible, #tib-history-panel .tib-selected { background: #8882; border-color: #8884; }
+.tib-history-summary { display: none; font-size: .85em; line-height: 1.6; opacity: .8; margin-top: 6px; white-space: normal; }
+#tib-history-preview { position: fixed; z-index: 10001; pointer-events: none; box-sizing: border-box; width: min(300px, calc(100vw - 16px)); max-height: calc(100vh - 16px); overflow: hidden; padding: 12px 14px; border: 1px solid #8886; border-radius: 10px; background: var(--SmartThemeBlurTintColor, #262626); color: var(--SmartThemeBodyColor, #eee); box-shadow: 0 6px 24px #0004; backdrop-filter: blur(16px); font-size: 13px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+#tib-history-preview[hidden] { display: none !important; }
+@media (hover: none) { .tib-history-summary { display: block; } }
+@media screen and (max-width: 700px) { #tib-history-button { max-width: 110px; } }
+
+#extensionTopBar {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    min-width: 0;
+    scrollbar-width: none;
+}
+
+#extensionTopBar::-webkit-scrollbar {
+    display: none;
+}
+
+#extensionTopBar > * {
+    flex-shrink: 0;
+}
+
+#extensionTopBarChatName {
+    min-width: 0;
+}
+
+#extensionTopBarSearchInput {
+    min-width: 0;
+}
+
+@media screen and (max-width: 700px) {
+    #extensionTopBar {
+        box-sizing: border-box;
+        height: var(--bottomFormBlockSize);
+        min-height: var(--bottomFormBlockSize);
+        padding: 0 4px;
+        gap: 2px;
+        align-items: center;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #extensionTopBar > .right_menu_button {
+        flex: 0 0 32px !important;
+        width: 32px !important;
+        min-width: 32px !important;
+        max-width: 32px !important;
+        height: 32px;
+        min-height: 32px;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+    }
+
+    #extensionTopBarChatName {
+        flex: 0 1 86px;
+        width: 86px;
+        min-width: 64px;
+        max-width: 110px;
+        margin: 0;
+        padding-left: 2px;
+        padding-right: 16px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        box-sizing: border-box;
+    }
+
+    #extensionTopBarSearchInput {
+        flex: 0 1 76px;
+        width: 76px;
+        min-width: 52px;
+        max-width: 100px;
+        margin: 0;
+        padding: 4px 6px;
+        box-sizing: border-box;
+        text-overflow: ellipsis;
+    }
+}
+
+@media screen and (max-width: 380px) {
+    #extensionTopBar > .right_menu_button {
+        flex-basis: 30px !important;
+        width: 30px !important;
+        min-width: 30px !important;
+        max-width: 30px !important;
+        height: 30px;
+        min-height: 30px;
+    }
+
+    #extensionTopBarChatName {
+        flex-basis: 72px;
+        width: 72px;
+        min-width: 58px;
+    }
+
+    #extensionTopBarSearchInput {
+        flex-basis: 64px;
+        width: 64px;
+        min-width: 44px;
+        max-width: 80px;
+    }
+}
+
+/* When the bar is still narrower than the complete control set,
+ * keep it one row and allow a natural horizontal swipe instead of wrapping.
+ */
+@media (pointer: coarse) and (max-width: 700px) {
+    #extensionTopBar {
+        touch-action: pan-x;
+    }
+
+    #extensionTopBarSearchInput {
+        font-size: max(12px, calc(var(--mainFontSize) * 0.85));
+    }
+}
+
+/* Keep the actions at the far right, ending with summary, settings and close. */
+#extensionTopBar { align-items: center; box-sizing: border-box; }
+#extensionTopBar #extensionTopBarChatManager { margin-left: auto !important; }
+#extensionTopBar .tib-action { background-image: none !important; box-shadow: none !important; text-shadow: none; filter: none; }
+#extensionTopBar #tib-settings-button { flex: 0 0 28px; width: 28px; min-width: 28px; padding: 0; }
+#extensionTopBar #tib-summary-button { flex: 0 0 28px; width: 28px; min-width: 28px; padding: 0; }
+/* All seven right-hand controls use the same hit area and icon alignment. */
+#extensionTopBar :is(#extensionTopBarChatManager, #extensionTopBarNewChat, #extensionTopBarRenameChat, #extensionTopBarDeleteChat, #tib-summary-button, #tib-settings-button, #extensionTopBarCloseChat) {
+    flex: 0 0 28px !important;
+    width: 28px !important;
+    min-width: 28px !important;
+    max-width: 28px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    margin-right: 0 !important;
+    font-size: inherit !important;
+    line-height: 1;
+}
+#extensionTopBar :is(#extensionTopBarNewChat, #extensionTopBarRenameChat, #extensionTopBarDeleteChat, #tib-summary-button, #tib-settings-button, #extensionTopBarCloseChat) { margin-left: 0 !important; }
+#extensionTopBar { column-gap: 4px !important; }
+@media screen and (max-width: 700px) { #extensionTopBar { column-gap: 2px !important; } }
+@media screen and (min-width: 701px) {
+    #extensionTopBarSearchInput { flex: 0 1 240px; width: 240px; min-width: 80px; }
+}
+
+/* Phone portrait layout only. Screen width also excludes a tablet's narrow
+ * split-screen window; pointer excludes narrow desktop windows. */
+@media screen and (max-width: 600px) and (max-device-width: 600px) and (pointer: coarse) {
+    body #extensionTopBar {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 4fr) minmax(0, 1fr);
+        grid-template-rows: 32px;
+        gap: 0 !important;
+        width: 100%;
+        height: auto !important;
+        min-height: 76px !important;
+        padding: 4px 4px 40px !important;
+        overflow: visible;
+        touch-action: auto;
+    }
+    #extensionTopBar :is(#tib-history-button, #extensionTopBarChatName) {
+        grid-column: 1;
+        grid-row: 1;
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        height: 32px;
+        margin: 0;
+        padding: 0 6px;
+        box-sizing: border-box;
+        text-align: left;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    #extensionTopBar #extensionTopBarSearchInput {
+        grid-column: 2;
+        grid-row: 1;
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        height: 32px;
+        margin: 0;
+        padding: 0 3px;
+        box-sizing: border-box;
+        font-size: 16px;
+    }
+    /* Second row: two controls at the left, seven at the right. All controls
+     * retain equal 28px widths and 2px gaps, without horizontal scrolling. */
+    #extensionTopBar :is(#extensionTopBarToggleSidebar, #extensionTopBarToggleConnectionProfiles, #extensionTopBarChatManager, #extensionTopBarNewChat, #extensionTopBarRenameChat, #extensionTopBarDeleteChat, #tib-summary-button, #tib-settings-button, #extensionTopBarCloseChat) {
+        position: absolute;
+        bottom: 4px;
+        width: 28px !important;
+        min-width: 28px !important;
+        max-width: 28px !important;
+        height: 32px !important;
+        min-height: 32px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+    }
+    #extensionTopBarToggleSidebar { left: 4px; }
+    #extensionTopBarToggleConnectionProfiles { left: 34px; }
+    #extensionTopBarCloseChat { right: 4px; }
+    #tib-settings-button { right: 34px; }
+    #tib-summary-button { right: 64px; }
+    #extensionTopBarDeleteChat { right: 94px; }
+    #extensionTopBarRenameChat { right: 124px; }
+    #extensionTopBarNewChat { right: 154px; }
+    #extensionTopBarChatManager { right: 184px; }
+}

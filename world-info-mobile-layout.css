@@ -1,0 +1,102 @@
+/* Phone only; do not apply to a desktop's narrow window or tablet split view. */
+@media screen and (max-width: 600px) and (max-device-width: 600px) and (pointer: coarse) {
+    #WorldInfo { padding: 10px 8px; box-sizing: border-box; }
+    #WorldInfo #wi-holder { margin: 0; min-width: 0; }
+    #world_popup { width: 100%; min-width: 0; }
+    #WorldInfo :is(input.text_pole, select.text_pole, textarea.text_pole) { font-size: 16px; box-sizing: border-box; }
+    #WorldInfo .menu_button { box-shadow: none; min-height: 34px; box-sizing: border-box; border-radius: 8px; }
+    #world_popup > .flex-container { gap: 6px; margin-bottom: 8px; }
+    /* Book name has its own line; creation and file actions stay below it. */
+    #world_popup > .flex-container:has(> #world_editor_select) { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+    #world_popup > .flex-container:has(> #world_editor_select) > small { display: none; }
+    #world_popup :is(#world_editor_select, #world_editor_select + .select2-container) { grid-row: 1; grid-column: 1 / -1; width: 100% !important; max-width: 100% !important; min-width: 0 !important; margin: 0; }
+    #world_popup #world_editor_select { height: 38px; }
+    #world_create_button { grid-column: span 2; white-space: nowrap; justify-content: center; }
+    #world_popup :is(#world_import_button, #world_popup_export, #world_popup_name_button, #world_duplicate, #world_popup_delete) { width: 100%; margin: 0; display: flex; align-items: center; justify-content: center; }
+    /* Entry tools, then full-width search/sort, then pagination. */
+    #world_popup > .flex-container:has(> #world_info_search) { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center; }
+    #world_popup > .flex-container:has(> #world_info_search) > .menu_button { width: 100%; margin: 0; display: flex; align-items: center; justify-content: center; }
+    #world_popup #world_info_search { grid-column: 1 / 4; width: 100%; max-width: none; min-width: 0; margin: 0; height: 36px; }
+    #world_popup #world_info_sort_order { grid-column: 4 / 6; width: 100%; max-width: none; min-width: 0; margin: 0; height: 36px; font-size: 13px; }
+    #world_info_pagination { grid-column: 2 / -1; min-width: 0; font-size: 12px; }
+    #world_info_pagination .paginationjs { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+    #world_info_pagination select { max-width: 100%; font-size: 13px; }
+    #world_popup_entries_list { padding: 2px 0 12px; }
+    #world_popup_entries_list .world_entry { margin: 0 0 10px; min-width: 0; }
+    #world_popup_entries_list .world_entry_form { padding: 0 !important; border-radius: 12px; overflow: hidden; }
+    /* Flatten wrappers for layout only; all original controls/events stay intact. */
+    #world_popup_entries_list .world_entry .inline-drawer-header {
+        display: grid !important;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        align-items: center;
+        gap: 6px !important;
+        padding: 10px !important;
+        min-width: 0;
+        border-radius: 12px;
+        box-shadow: none;
+    }
+    #world_popup_entries_list .inline-drawer-header > .world_entry_thin_controls,
+    #world_popup_entries_list .inline-drawer-header .world_entry_thin_controls > .flex-container:has(> .WIEntryTitleAndStatus),
+    #world_popup_entries_list .inline-drawer-header .WIEntryTitleAndStatus,
+    #world_popup_entries_list .inline-drawer-header .WIEntryTitleAndStatus > div:has(> textarea[name="comment"]) { display: contents !important; }
+    #world_popup_entries_list .inline-drawer-header textarea[name="comment"] {
+        grid-column: 1 / -1;
+        grid-row: 1;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        height: 40px !important;
+        min-height: 40px !important;
+        max-height: 40px !important;
+        margin: 0 !important;
+        padding: 8px 10px;
+        font-size: 16px;
+        font-weight: 600;
+        line-height: 22px;
+        white-space: pre;
+        overflow: auto;
+        resize: none;
+        border-radius: 8px;
+        box-sizing: border-box;
+    }
+    #world_popup_entries_list .inline-drawer-header :is(.drag-handle, .inline-drawer-toggle, .killSwitch, select[name="entryStateSelector"], .move_entry_button, .duplicate_entry_button, .delete_entry_button) {
+        grid-row: 2;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        min-height: 34px;
+        margin: 0 !important;
+        padding: 4px 0;
+        box-sizing: border-box;
+        text-align: center;
+        align-content: center;
+        font-size: 16px;
+        box-shadow: none;
+        border-radius: 7px;
+    }
+    #world_popup_entries_list .inline-drawer-header .drag-handle { grid-column: 1; opacity: .55; }
+    #world_popup_entries_list .inline-drawer-header .inline-drawer-toggle { grid-column: 2; }
+    #world_popup_entries_list .inline-drawer-header .killSwitch { grid-column: 3; }
+    #world_popup_entries_list select[name="entryStateSelector"] { grid-column: 4; }
+    #world_popup_entries_list .move_entry_button { grid-column: 5; }
+    #world_popup_entries_list .duplicate_entry_button { grid-column: 6; }
+    #world_popup_entries_list .delete_entry_button { grid-column: 7; }
+    #world_popup_entries_list .WIEnteryHeaderControls {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px !important;
+        width: 100%;
+        min-width: 0;
+        margin: 0 !important;
+    }
+    #world_popup_entries_list .WIEnteryHeaderControls > [name="PositionBlock"] { grid-column: 1 / -1; }
+    #world_popup_entries_list .WIEnteryHeaderControls > .world_entry_form_control { min-width: 0; width: 100%; margin: 0; gap: 3px; }
+    #world_popup_entries_list .WIEnteryHeaderControls .WIEntryHeaderTitleMobile { display: block; font-size: 12px; line-height: 1.3; opacity: .7; margin: 0; }
+    #world_popup_entries_list .WIEnteryHeaderControls :is(input, select) { width: 100% !important; min-width: 0; max-width: none !important; height: 34px; min-height: 34px; margin: 0; padding: 3px 8px; border-radius: 7px; box-sizing: border-box; font-size: 16px; }
+    #world_popup_entries_list .inline-drawer-outlet { padding: 10px; box-sizing: border-box; }
+    #world_popup_entries_list .WIEntryContentAndMemo { flex-wrap: wrap !important; }
+    #world_popup_entries_list .WIEntryContentAndMemo > * { flex-basis: 100%; min-width: 0; }
+    #world_popup_entries_list textarea[name="content"] { min-height: 180px; line-height: 1.6; }
+}

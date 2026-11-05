@@ -1,0 +1,12 @@
+{
+  "display_name": "酒馆界面优化合集",
+  "loading_order": 2000,
+  "requires": [],
+  "optional": [],
+  "js": "index.js",
+  "css": "style.css",
+  "author": "moonxi2005",
+  "version": "1.0.0",
+  "homePage": "https://github.com/moonxi2005/world-info-mobile-layout",
+  "auto_update": true
+}

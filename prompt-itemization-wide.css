@@ -1,0 +1,55 @@
+@media screen {
+    body .piw-dialog, body #dialogue_popup.piw-dialog {
+        position: fixed !important;
+        inset: 8px !important;
+        margin: 0 !important;
+        transform: none !important;
+        width: calc(100vw - 16px) !important;
+        max-width: calc(100vw - 16px) !important;
+        height: calc(100vh - 16px) !important;
+        max-height: calc(100vh - 16px) !important;
+        min-height: 0 !important;
+        padding: 12px !important;
+        box-sizing: border-box;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column;
+    }
+    .piw-dialog .popup-body { display: flex; flex-direction: column; min-height: 0; height: 100%; overflow: hidden; }
+    .piw-dialog .popup-content, .piw-dialog #dialogue_popup_text { flex: 1; min-height: 0; width: 100% !important; max-height: none !important; display: flex; flex-direction: column; overflow: hidden !important; }
+    .piw-dialog .popup-controls { flex-shrink: 0; }
+    .piw-layout { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(210px, 32%) minmax(0, 1fr); gap: 10px; text-align: left; }
+    .piw-stats { min-width: 0; min-height: 0; overflow: auto; padding: 4px 10px 12px 4px; scrollbar-gutter: stable; font-size: 15px; }
+    .piw-stats h3 { font-size: 19px; }
+    .piw-stats .tokenGraph { flex: 0 0 55px !important; width: 55px !important; max-height: 440px; }
+    .piw-stats .tokenGraph + .wide50p { flex: 1; width: auto !important; min-width: 0; }
+    .piw-dialog #rawPromptPopup.piw-raw {
+        position: static !important;
+        inset: auto !important;
+        transform: none !important;
+        display: block !important;
+        float: none !important;
+        width: auto !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        height: 100% !important;
+        max-height: none !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 16px !important;
+        box-sizing: border-box;
+        overflow: auto !important;
+        scrollbar-gutter: stable;
+        border: 1px solid var(--SmartThemeBorderColor, #8885);
+        border-radius: 10px;
+        box-shadow: none;
+    }
+    .piw-dialog #rawPromptWrapper { white-space: pre-wrap !important; overflow-wrap: anywhere; word-break: normal; text-align: left; font-family: ui-monospace, Consolas, monospace; font-size: 15px; line-height: 1.7; max-width: 100%; }
+}
+@media screen and (max-width: 900px) {
+    .piw-layout { grid-template-columns: minmax(180px, 34%) minmax(0, 1fr); gap: 8px; }
+    .piw-stats { font-size: 13px; padding-right: 4px; }
+    .piw-stats .tokenGraph { flex-basis: 12px !important; width: 12px !important; }
+    .piw-dialog #rawPromptPopup.piw-raw { padding: 10px !important; }
+    .piw-dialog #rawPromptWrapper { font-size: 14px; }
+}
