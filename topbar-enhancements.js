@@ -409,5 +409,6 @@
         if (isApiErrorText(saved?.text)) { delete settings().summaries[id]; removedInvalidSummary = true; }
     }
     if (removedInvalidSummary) persist();
+    document.addEventListener('tavern-ui-toolkit:topbar-settings', () => void openSettings());
     enhance();
 })();

@@ -20,8 +20,6 @@
     document.body.append(nav, preview);
     let chatElement, observer, frame, renderTimer, current = -1, jumping = false, sequence = 0;
     let fingerprint = '', buttons = [];
-    let enabled = true;
-    try { enabled = localStorage.getItem('floor-navigator-enabled') !== 'false'; } catch { /* Storage may be unavailable. */ }
     const findMessage = id => chatElement?.querySelector(`.mes[mesid="${id}"]`);
     let previewSequence = 0, regexEnginePromise;
     const hidePreview = () => { ++previewSequence; preview.hidden = true; };
@@ -127,7 +125,7 @@
     function position() {
         if (!chatElement) { nav.hidden = true; return; }
         const r = chatElement.getBoundingClientRect();
-        nav.hidden = !enabled || !context().chat?.length || r.width === 0 || r.height === 0;
+        nav.hidden = !context().chat?.length || r.width === 0 || r.height === 0;
         const left = r.left >= 52 ? r.left - 50 : Math.max(2, r.left + 2);
         let top = Math.max(4, r.top + 12);
         let maxHeight = Math.max(30, Math.min(r.height - 24, innerHeight - r.top - 24));
@@ -289,29 +287,12 @@
     for (const name of ['CHAT_CHANGED', 'MESSAGE_RECEIVED', 'MESSAGE_SENT', 'MESSAGE_DELETED', 'MESSAGE_UPDATED', 'MESSAGE_SWIPED', 'MORE_MESSAGES_LOADED']) {
         if (ctx.event_types?.[name]) ctx.eventSource.on(ctx.event_types[name], () => { bindChat(); scheduleRender(); });
     }
-    const settings = document.getElementById('extensions_settings');
-    if (settings) {
-        const label = document.createElement('label');
-        label.className = 'checkbox_label';
-        const input = document.createElement('input');
-        input.type = 'checkbox';
-        input.checked = enabled;
-        input.addEventListener('change', () => {
-            enabled = input.checked;
-            try { localStorage.setItem('floor-navigator-enabled', String(enabled)); } catch { /* Optional persistence. */ }
-            hidePreview(); position();
-        });
-        label.append(input, document.createTextNode('楼层快速导航（蓝：用户 / 橙：AI）'));
-        settings.append(label);
-        const reset = document.createElement('button');
-        reset.type = 'button'; reset.textContent = '重置楼层导航位置';
-        reset.addEventListener('click', () => {
-            savedPositions[positionKey()] = null;
-            try { localStorage.removeItem(positionKey()); } catch { /* Optional persistence. */ }
-            position();
-        });
-        settings.append(reset);
-    }
+    document.addEventListener('tavern-ui-toolkit:reset-floor-position', () => {
+        const key = positionKey();
+        savedPositions[key] = null;
+        try { localStorage.removeItem(key); } catch { /* Optional persistence. */ }
+        position();
+    });
     bindChat();
     // Also tracks chat panel resizing and replacement by layout extensions.
     setInterval(() => { bindChat(); position(); }, 1200);
