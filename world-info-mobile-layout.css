@@ -19,29 +19,40 @@
     #WorldInfo #wiActivationSettings :is(input[type="number"], select) { height: 28px; min-height: 28px; padding: 2px 5px; font-size: 13px !important; }
     #world_popup > hr { margin: 6px 0; }
     #world_popup > .flex-container { gap: 4px; margin-bottom: 6px; }
-    /* Book name has its own line; creation and file actions stay below it. */
-    #world_popup > .flex-container:has(> #world_editor_select) { display: flex; flex-wrap: wrap; justify-content: flex-start; }
+    /* A shared grid removes the empty tails of separate wrapping toolbars. */
+    #world_popup { display: grid !important; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 4px 2px !important; align-content: start; }
+    #world_popup > hr { display: none; }
+    #world_popup > .flex-container:has(> #world_editor_select),
+    #world_popup > .flex-container:has(> #world_info_search) { display: contents !important; }
     #world_popup > .flex-container:has(> #world_editor_select) > small { display: none; }
-    #world_popup :is(#world_editor_select, #world_editor_select + .select2-container) { order: -1; flex: 0 0 100%; width: 100% !important; max-width: 100% !important; min-width: 0 !important; margin: 0; }
+    #world_popup :is(#world_editor_select, #world_editor_select + .select2-container) { grid-row: 1; grid-column: 1 / 9; width: 100% !important; max-width: 100% !important; min-width: 0 !important; margin: 0; }
     #world_popup #world_editor_select { height: 30px; min-height: 30px; font-size: 14px !important; padding: 3px 6px; }
     #world_popup #world_editor_select + .select2-container .select2-selection--single { height: 30px; min-height: 30px; font-size: 14px; }
     #world_popup #world_editor_select + .select2-container .select2-selection__rendered { line-height: 28px; padding-left: 6px; }
     #world_popup #world_editor_select + .select2-container .select2-selection__arrow { height: 28px; }
-    #world_create_button { flex: 0 0 auto; width: auto; white-space: nowrap; justify-content: center; }
-    #world_popup :is(#world_import_button, #world_popup_export, #world_popup_name_button, #world_duplicate, #world_popup_delete) { flex: 0 0 28px; width: 28px; margin: 0; display: flex; align-items: center; justify-content: center; }
-    /* Entry tools, then full-width search/sort, then pagination. */
-    #world_popup > .flex-container:has(> #world_info_search) { display: flex; flex-wrap: wrap; justify-content: flex-start; align-items: center; }
-    #world_popup > .flex-container:has(> #world_info_search) > .menu_button { flex: 0 0 28px; width: 28px; margin: 0; display: flex; align-items: center; justify-content: center; }
-    #world_popup #world_info_search { flex: 1 1 110px; width: 110px; max-width: none; min-width: 80px; margin: 0; height: 28px; padding: 3px 6px; }
-    #world_popup #world_info_sort_order { flex: 0 1 105px; width: 105px; max-width: none; min-width: 80px; margin: 0; height: 28px; font-size: 13px !important; padding: 3px 6px; }
-    #world_info_pagination { flex: 1 1 calc(100% - 36px); min-width: 0; font-size: 12px; }
-    #world_info_pagination .paginationjs { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+    #world_popup #world_create_button { grid-row: 1; grid-column: 9 / -1; width: auto; justify-self: end; white-space: nowrap; justify-content: center; }
+    #world_popup :is(#world_import_button, #world_popup_export, #world_popup_name_button, #world_duplicate, #world_popup_delete, #world_popup_new, #OpenAllWIEntries, #CloseAllWIEntries, #world_backfill_memos, #world_apply_current_sorting, #world_refresh) { width: 100%; max-width: 28px; min-width: 0; height: 28px; margin: 0; padding: 3px 0 !important; display: flex; align-items: center; justify-content: center; justify-self: center; }
+    #world_import_button { grid-row: 2; grid-column: 1; }
+    #world_popup_export { grid-row: 2; grid-column: 2; }
+    #world_popup_name_button { grid-row: 2; grid-column: 3; }
+    #world_duplicate { grid-row: 2; grid-column: 4; }
+    #world_popup_delete { grid-row: 2; grid-column: 5; }
+    #world_popup_new { grid-row: 2; grid-column: 6; }
+    #OpenAllWIEntries { grid-row: 2; grid-column: 7; }
+    #CloseAllWIEntries { grid-row: 2; grid-column: 8; }
+    #world_backfill_memos { grid-row: 2; grid-column: 9; }
+    #world_apply_current_sorting { grid-row: 2; grid-column: 10; }
+    #world_popup #world_info_search { grid-row: 3; grid-column: 1 / 7; width: 100%; max-width: none; min-width: 0; margin: 0; height: 28px; padding: 3px 6px; }
+    #world_popup #world_info_sort_order { grid-row: 3; grid-column: 7 / 10; width: 100%; max-width: none; min-width: 0; margin: 0; height: 28px; font-size: 13px !important; padding: 3px 4px; }
+    #world_refresh { grid-row: 3; grid-column: 10; }
+    #world_info_pagination { grid-row: 4; grid-column: 1 / -1; min-width: 0; font-size: 12px; }
+    #world_info_pagination .paginationjs { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; justify-content: space-between; }
     #world_info_pagination select { max-width: 100%; font-size: 13px; }
     #WorldInfo #world_info_pagination :is(select, input) { height: 26px; min-height: 26px; font-size: 12px !important; padding: 2px 4px; }
     #WorldInfo #world_info_pagination .paginationjs-pages li { min-width: 24px; height: 26px; }
     #WorldInfo #world_info_pagination .paginationjs-pages li > a { min-width: 24px; height: 24px; line-height: 24px; font-size: 12px; }
     #WorldInfo #world_info_pagination :is(.paginationjs-nav, .paginationjs-size-changer) { font-size: 12px; line-height: 26px; }
-    #world_popup_entries_list { padding: 2px 0 12px; }
+    #world_popup_entries_list { grid-row: 5; grid-column: 1 / -1; min-width: 0; padding: 2px 0 12px; }
     #world_popup_entries_list .world_entry { margin: 0 0 6px; min-width: 0; }
     #world_popup_entries_list .world_entry_form { padding: 0 !important; border-radius: 12px; overflow: hidden; }
     /* Flatten wrappers for layout only; all original controls/events stay intact. */
