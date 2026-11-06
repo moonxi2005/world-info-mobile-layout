@@ -1,3 +1,9 @@
+/* TauriTavern can mount CodeMirror before the entry drawer is visible. */
+#world_popup_entries_list .world_entry_edit textarea[name="content"] + .tt-codemirror-editor {
+    min-height: 160px;
+    flex-shrink: 0;
+}
+
 /* Inline picker is visible only on phones. Native desktop selector remains. */
 #wim-book-select, #wim-book-picker { display: none; }
 /* Phone only; do not apply to a desktop's narrow window or tablet split view. */

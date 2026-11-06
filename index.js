@@ -11,6 +11,8 @@ async function startToolkit() {
         { id: 'prompt-itemization-wide', name: '提示词拆分双栏', description: '在电脑窗口内并排查看统计和提示词正文。' },
         { id: 'preset-entry-filter', name: '预设条目筛选', description: '在聊天补全的提示词管理器中搜索条目，按状态、角色和分区筛选。' },
         { id: 'world-info-mobile-layout', name: '手机世界书布局', description: '紧凑总控、页内选书和条目编辑排版。' },
+        { id: 'editor-find-replace', name: '编辑器查找替换', description: '在正文编辑器中直接展开查找和替换。' },
+        { id: 'local-notebooks', name: '本地记事夹', description: '从屏幕边缘展开多个自动保存的本地记事本。' },
     ];
     // Carry forward the previous standalone floor switch on the first upgrade.
     if (enabled['floor-navigator'] === undefined) {

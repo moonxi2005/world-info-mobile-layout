@@ -40,7 +40,23 @@
         button.title = select.selectedOptions[0]?.textContent || '选择以编辑';
         if (!panel.hidden) render();
     }
+    // This control only changes the editor's list view in TauriTavern 2.3.
+    let sortControl;
+    function restoreSortControl() {
+        if (sortControl?.disabled && select?.value && !select.disabled && sortControl.options.length > 1) {
+            sortControl.disabled = false;
+        }
+    }
+
+    const sortObserver = new MutationObserver(restoreSortControl);
     function bind() {
+        const currentSort = document.querySelector('#world_popup select#world_info_sort_order');
+        if (currentSort !== sortControl) {
+            sortObserver.disconnect();
+            sortControl = currentSort;
+            if (sortControl) sortObserver.observe(sortControl, { attributes: true, attributeFilter: ['disabled'] });
+        }
+        restoreSortControl();
         const current = document.getElementById('world_editor_select');
         if (!current || current === select) return;
         optionsObserver?.disconnect(); button?.remove(); panel?.remove();
@@ -63,9 +79,11 @@
         search.addEventListener('input', render);
         panel.addEventListener('keydown', event => { if (event.key === 'Escape') { close(); button.focus(); } });
         select.addEventListener('change', sync);
+        select.addEventListener('change', restoreSortControl);
         optionsObserver = new MutationObserver(sync);
         optionsObserver.observe(select, { childList: true, subtree: true, attributes: true, attributeFilter: ['value', 'selected', 'disabled', 'label'] });
         sync();
+        restoreSortControl();
     }
     phone.addEventListener('change', () => { close(); bind(); });
     let queued = false;

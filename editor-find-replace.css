@@ -1,0 +1,38 @@
+.efr-toolbar {
+    flex: 0 0 100%;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    margin-block: 3px;
+}
+.efr-toolbar .menu_button {
+    width: auto;
+    padding-inline: 8px;
+    font-size: 0.85em;
+}
+.efr-panel {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
+    margin-block: 4px;
+}
+.efr-panel[hidden] { display: none; }
+.efr-panel > input { min-width: 0; margin: 0; }
+.efr-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.9em;
+}
+.efr-actions label { display: inline-flex; align-items: center; }
+
+
+/* The native CodeMirror toolbar already provides find and replace. */
+.efr-toolbar:has(+ textarea + .tt-codemirror-editor) { display: none; }
+.cm-editor-tools button.efr-native {
+    width: auto;
+    padding-inline: 6px;
+    white-space: nowrap;
+}
