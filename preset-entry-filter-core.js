@@ -40,7 +40,7 @@ export function tokens(query) {
         .map(m => ({ exclude: m[1] === '-', value: (m[2] ?? m[3]).toLocaleLowerCase() }));
 }
 
-export function matches(row, filter) {
+export function matches(row, filter, queryTokens = tokens(filter.query ?? defaults.query)) {
     const f = { ...defaults, ...filter };
     if (Array.isArray(f.allowedIds) && !f.allowedIds.includes(row.id)) return false;
     if (f.status === 'on' && row.enabled !== true) return false;
@@ -50,12 +50,14 @@ export function matches(row, filter) {
     if (f.source !== 'all' && row.source !== f.source) return false;
     if (f.kind !== 'all' && row.kind !== f.kind) return false;
     if (f.section !== 'all' && row.section !== f.section) return false;
+    if (!queryTokens.length) return true;
     const hay = (f.field === 'name' ? row.name : f.field === 'content' ? row.content : `${row.name}\n${row.content}\n${row.id}`).toLocaleLowerCase();
-    return tokens(f.query).every(t => t.exclude ? !hay.includes(t.value) : hay.includes(t.value));
+    return queryTokens.every(t => t.exclude ? !hay.includes(t.value) : hay.includes(t.value));
 }
 
 export function selectRows(rows, filter, keepHeadings = true) {
-    const direct = new Set(rows.filter(r => matches(r, filter)).map(r => r.id));
+    const queryTokens = tokens(filter.query ?? defaults.query);
+    const direct = new Set(rows.filter(r => matches(r, filter, queryTokens)).map(r => r.id));
     const visible = new Set(direct);
     if (keepHeadings && filter.kind !== 'text' && filter.kind !== 'marker') {
         for (const row of rows) if (direct.has(row.id) && row.section) visible.add(row.section);

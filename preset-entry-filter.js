@@ -167,17 +167,18 @@ async function apply() {
     }
     updateSchemes(rows);
     sections(rows);
-    const selected = selectRows(rows, filter, keepHeadings);
+    const active = enabled && (filter.allowedIds || filter.query.trim() || Object.keys(defaults).some(k => k !== 'query' && filter[k] !== defaults[k]));
+    const selected = active ? selectRows(rows, filter, keepHeadings) : null;
     let shown = 0, total = 0;
     for (const node of list.children) {
         const id = node.dataset.pmIdentifier;
         if (!id) continue;
         total++;
-        const hide = enabled && !selected.visible.has(id);
+        const hide = selected !== null && !selected.visible.has(id);
         node.classList.toggle(ROW_HIDDEN, hide);
         if (!hide) shown++;
     }
-    const active = enabled && (filter.allowedIds || filter.query.trim() || Object.keys(defaults).some(k => k !== 'query' && filter[k] !== defaults[k]));
+
     list.classList.toggle('pef-filter-active', Boolean(active));
     const unlisted = rows.filter(r => !r.ordered).length;
     status.textContent = `列表显示 ${shown} / ${total}；预设另有 ${unlisted} 个未排序条目，可在“查看全部条目”中搜索。${active ? ' 筛选期间拖动排序暂停，编辑和开关仍可用。' : ''}`;
@@ -260,12 +261,18 @@ function init() {
         const relevant = records.some(record => {
             const target = record.target;
             if (target.closest?.('#pef-toolbar, #pef-dialog')) return false;
-            if (target.closest?.('#completion_prompt_manager')) return true;
+            if (target.id === 'completion_prompt_manager_list') return true;
             return [...record.addedNodes].some(n => n.nodeType === 1 && (n.matches?.('#completion_prompt_manager, #completion_prompt_manager_list') || n.querySelector?.('#completion_prompt_manager_list')));
         });
         if (relevant) schedule();
     });
     observer.observe(document.body, { subtree: true, childList: true });
+    const onToggle = event => {
+        if (event.target.closest?.('#completion_prompt_manager_list .prompt-manager-toggle-action')
+            && ((enabled && filter.status !== 'all') || dialog?.open)) schedule();
+    };
+    document.addEventListener('click', onToggle, true);
+    disposers.push(() => document.removeEventListener('click', onToggle, true));
     const ctx = window.SillyTavern?.getContext?.();
     for (const name of ['OAI_PRESET_CHANGED_AFTER', 'CHAT_CHANGED']) {
         const type = ctx?.eventTypes?.[name] ?? ctx?.event_types?.[name];

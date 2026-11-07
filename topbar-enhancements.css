@@ -22,7 +22,12 @@
 #extensionTopBarChatName.tib-enhanced-select { display: none !important; }
 #tib-history-button { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; min-width: 64px; }
 #tib-history-panel { position: fixed; z-index: 10000; box-sizing: border-box; padding: 6px; overflow-y: auto; overscroll-behavior: contain; border: 1px solid #8886; border-radius: 10px; background: var(--SmartThemeBlurTintColor, #262626); color: var(--SmartThemeBodyColor, #eee); box-shadow: 0 8px 32px #0005; backdrop-filter: blur(16px); }
-#tib-history-panel .tib-history-search { position: sticky; top: 0; z-index: 1; width: 100%; box-sizing: border-box; margin: 0 0 4px; background: var(--SmartThemeBlurTintColor, #262626); }
+#tib-history-panel .tib-history-tools { position: sticky; top: 0; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px; margin-bottom: 4px; background: var(--SmartThemeBlurTintColor, #262626); }
+#tib-history-panel .tib-history-tools .text_pole { min-width: 0; margin: 0; box-sizing: border-box; }
+#tib-history-panel .tib-history-sort { max-width: 9em; }
+.tib-rename-input { display: flex; align-items: center; gap: 4px; width: 100%; }
+.tib-rename-input .popup-input { flex: 1; min-width: 0; }
+.tib-rename-input .tib-action { flex: none; }
 #tib-history-panel .tib-history-empty { padding: 6px 10px; opacity: .75; }
 #tib-history-panel[hidden] { display: none !important; }
 #tib-history-panel .tib-history-row { display: block; width: 100%; padding: 9px 10px; margin: 2px 0; text-align: left; overflow-wrap: anywhere; border: 1px solid transparent; white-space: normal; }

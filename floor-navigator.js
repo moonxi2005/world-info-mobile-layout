@@ -196,7 +196,7 @@
         if (!frame) frame = requestAnimationFrame(() => { frame = 0; updateCurrent(); });
     }
 
-    async function jump(id) {
+    async function jump(id, block = 'start') {
         const token = ++sequence;
         const chat = context().chat;
         jumping = true;
@@ -214,7 +214,7 @@
             }
             if (token !== sequence || context().chat !== chat) return;
             if (!target) throw new Error('目标消息尚未加载，请先加载更早的消息后重试');
-            target.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+            target.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block });
             target.classList.remove('fn-jump-highlight');
             void target.offsetWidth;
             target.classList.add('fn-jump-highlight');
@@ -247,6 +247,19 @@
                 return button;
             });
             list.replaceChildren(...buttons);
+            if (chat.length) {
+                const tail = document.createElement('button');
+                tail.type = 'button';
+                tail.className = 'fn-floor fn-system';
+                tail.textContent = 'L';
+                tail.title = '跳到最后一楼末尾';
+                tail.setAttribute('aria-label', tail.title);
+                tail.addEventListener('click', () => {
+                    const last = (context().chat?.length ?? 0) - 1;
+                    if (last >= 0) void jump(last, 'end');
+                });
+                list.append(tail);
+            }
             current = -1;
         }
         position();
@@ -260,9 +273,9 @@
         hidePreview();
         if (!collapsed) { current = -1; scheduleCurrent(); }
     });
-    list.addEventListener('click', event => { const b = event.target.closest('.fn-floor'); if (b) void jump(Number(b.dataset.floor)); });
-    list.addEventListener('mouseover', event => { const b = event.target.closest('.fn-floor'); if (b) showPreview(b); });
-    list.addEventListener('focusin', event => { const b = event.target.closest('.fn-floor'); if (b) showPreview(b); });
+    list.addEventListener('click', event => { const b = event.target.closest('.fn-floor[data-floor]'); if (b) void jump(Number(b.dataset.floor)); });
+    list.addEventListener('mouseover', event => { const b = event.target.closest('.fn-floor[data-floor]'); if (b) showPreview(b); });
+    list.addEventListener('focusin', event => { const b = event.target.closest('.fn-floor[data-floor]'); if (b) showPreview(b); });
     list.addEventListener('mouseleave', hidePreview);
     list.addEventListener('focusout', hidePreview);
     list.addEventListener('scroll', hidePreview, { passive: true });

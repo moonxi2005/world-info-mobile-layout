@@ -393,6 +393,10 @@ export const donutProfile = {
       "id": "defense",
       "label": "破甲、破限与防截断",
       "ids": [
+        "16575706-d1c3-4892-b0b5-1127fc48118a",
+        "14a045df-4cfa-4680-b1f8-32d1cec4104b",
+        "0de4e58c-b792-576c-8b73-b6d725362bc2",
+        "6031612d-5e05-5440-af1f-64ce8402df2c",
         "923770d6-10b5-4b28-ac0a-b5bc30fb3951",
         "ef713ff7-992b-4195-b175-4b9614695d23",
         "8180a080-5881-47ad-8de8-83c8be9f90db",

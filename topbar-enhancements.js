@@ -1,4 +1,6 @@
 // Chat Top Bar companion: mobile layout, rename shortcuts and saved summaries.
+import { compareHistory, fetchHistoryChat, getHistorySnapshot, getHistorySort, populateSideBar, prepareCreationTimes } from './chat-top-bar.js';
+
 (() => {
     if (window.__tibEnhancements) return;
     window.__tibEnhancements = true;
@@ -79,7 +81,19 @@
                 field.setRangeText(tag, start, start, 'end'); field.dispatchEvent(new Event('input', { bubbles: true })); field.focus();
             }));
             row.append(button('⚙', '修改快捷词和总结设置', () => void openSettings()));
-            field.insertAdjacentElement('afterend', row); renameUntil = 0; break;
+            const inputRow = document.createElement('div');
+            inputRow.className = 'tib-rename-input';
+            const clear = button('×', '清空聊天名称', () => {
+                field.value = '';
+                field.dispatchEvent(new Event('input', { bubbles: true }));
+                field.focus();
+            });
+            clear.setAttribute('aria-label', clear.title);
+            field.before(inputRow);
+            inputRow.append(field, clear);
+            inputRow.after(row);
+            renameUntil = 0;
+            break;
         }
     }
     document.addEventListener('click', event => {
@@ -250,7 +264,28 @@
     historySearch.placeholder = '搜索聊天名或总结…';
     historySearch.setAttribute('aria-label', '搜索聊天记录');
     const historyRows = document.createElement('div');
-    panel.append(historySearch, historyRows);
+    const sort = document.createElement('select');
+    sort.className = 'text_pole tib-history-sort';
+    sort.setAttribute('aria-label', '聊天记录排序');
+    for (const [value, caption] of [
+        ['newest', '更新：新到旧'], ['oldest', '更新：旧到新'],
+        ['created-newest', '创建：新到旧'], ['created-oldest', '创建：旧到新'], ['az', '名称 A–Z'],
+        ['za', '名称 Z–A'], ['largest', '文件从大到小'], ['smallest', '文件从小到大'],
+    ]) sort.add(new Option(caption, value));
+    sort.value = getHistorySort();
+    sort.addEventListener('change', () => {
+        settings().historySort = sort.value;
+        persist();
+        historyLimit = pageSize;
+        panel.scrollTop = 0;
+        renderHistory();
+        void populateSideBar();
+    });
+    const historyTools = document.createElement('div');
+    historyTools.className = 'tib-history-tools';
+    historyTools.append(historySearch, sort);
+    panel.append(historyTools, historyRows);
+    let renderRevision = 0;
     const pageSize = 60;
     let historyLimit = pageSize;
     historySearch.addEventListener('input', () => {
@@ -280,17 +315,8 @@
     async function loadFirstMessage(owner, name) {
         const id = key(owner, name), cached = firstMessageCache.get(id);
         if (cached && Date.now() - cached.time < 300000) return cached.promise || cached.text;
-        const character = ctx().characters?.find(c => `character:${c.avatar}` === owner);
         const promise = (async () => {
-            const group = owner.startsWith('group:');
-            const response = await fetch(group ? '/api/chats/group/get' : '/api/chats/get', {
-                method: 'POST', headers: ctx().getRequestHeaders(),
-                body: JSON.stringify(group ? { id: stripExt(name) } : { avatar_url: owner.slice('character:'.length), ch_name: character?.name, file_name: stripExt(name) }),
-            });
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const data = await response.json();
-            const messages = Array.isArray(data) ? data : data?.chat;
-            if (!Array.isArray(messages)) throw new Error('聊天数据格式无效');
+            const messages = await fetchHistoryChat(owner, stripExt(name));
             const text = firstMessageText(messages);
             firstMessageCache.set(id, { text, time: Date.now() }); return text;
         })();
@@ -346,7 +372,8 @@
         }
         if (!panel.hidden) renderHistory();
     }
-    function renderHistory() {
+    async function renderHistory() {
+        const revision = ++renderRevision;
         const select = document.getElementById('extensionTopBarChatName');
         if (!select) return;
         hideHistoryPreview(); historyRows.replaceChildren();
@@ -358,6 +385,16 @@
             const text = `${option.textContent} ${summaries[key(owner, option.value)]?.text ?? ''}`.normalize('NFKC').toLocaleLowerCase();
             return terms.every(term => text.includes(term));
         });
+        const order = sort.value;
+        let sortMetadata = new Map();
+        if (order !== 'az' && order !== 'za' && matches.length > 1) {
+            const snapshot = getHistorySnapshot();
+            if (order.startsWith('created-')) await prepareCreationTimes(snapshot);
+            else await snapshot.promise;
+            if (revision !== renderRevision || panel.hidden || owner !== scope()) return;
+            sortMetadata = snapshot.metadata;
+        }
+        matches.sort((a, b) => compareHistory(a.value, b.value, sortMetadata, order));
         for (const option of matches.slice(0, historyLimit)) {
             const row = button(option.textContent, '', () => {
                 closeHistory();

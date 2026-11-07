@@ -13,6 +13,9 @@ async function startToolkit() {
         { id: 'world-info-mobile-layout', name: '手机世界书布局', description: '紧凑总控、页内选书和条目编辑排版。' },
         { id: 'editor-find-replace', name: '编辑器查找替换', description: '在正文编辑器中直接展开查找和替换。' },
         { id: 'local-notebooks', name: '本地记事夹', description: '从屏幕边缘展开多个自动保存的本地记事本。' },
+        { id: 'quote-color-repair', name: '对白引号着色修复', description: '规划块反引号干扰原生着色时，为可见正文补上主题引号颜色。' },
+        { id: 'swipe-delete', name: '候选回复快速删除', description: '在消息操作栏的省略号左侧显示红叉，直接删除当前候选回复。' },
+        { id: 'quick-input-layout', name: '快捷输入排版', description: '快捷输入同排显示，创世回廊和防截断并排显示。' },
     ];
     // Carry forward the previous standalone floor switch on the first upgrade.
     if (enabled['floor-navigator'] === undefined) {

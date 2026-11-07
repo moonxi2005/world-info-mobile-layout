@@ -1,4 +1,4 @@
-import { findMatches } from './editor-find-replace-matches.js';
+import { decodeEditorText, findMatches } from './editor-find-replace-matches.js';
 
 const selector = [
     'textarea.edit_textarea',
@@ -57,7 +57,7 @@ function attach(editor) {
     toolbar.append(toggle, panel);
     editor.before(toolbar);
 
-    const matches = () => findMatches(editor.value, query.value, matchCase.checked);
+    const matches = () => findMatches(editor.value, decodeEditorText(query.value), matchCase.checked);
     function update() {
         const count = matches().length;
         status.textContent = query.value ? `共 ${count} 处` : '';
@@ -91,7 +91,7 @@ function attach(editor) {
     function open() {
         if (panel.hidden) {
             const selected = editor.value.slice(editor.selectionStart, editor.selectionEnd);
-            if (selected && !selected.includes('\n')) query.value = selected;
+            if (selected) query.value = selected.replaceAll('\\', '\\\\').replaceAll('\n', '\\n').replaceAll('\t', '\\t');
             panel.hidden = false;
             toggle.setAttribute('aria-expanded', 'true');
             update();
@@ -114,16 +114,17 @@ function attach(editor) {
         const selected = found.find(match => match.start === editor.selectionStart && match.end === editor.selectionEnd);
         const match = selected ?? found.find(match => match.start >= editor.selectionStart) ?? found[0];
         if (!match) return;
-        edit(match.start, match.end, replacement.value);
+        edit(match.start, match.end, decodeEditorText(replacement.value));
         select(false);
     });
     replaceAll.addEventListener('click', () => {
         const found = matches();
         if (!found.length) return;
+        const value = decodeEditorText(replacement.value);
         const pieces = [];
         let offset = 0;
         for (const match of found) {
-            pieces.push(editor.value.slice(offset, match.start), replacement.value);
+            pieces.push(editor.value.slice(offset, match.start), value);
             offset = match.end;
         }
         pieces.push(editor.value.slice(offset));
@@ -173,10 +174,19 @@ function scan() {
     }
 }
 
+function relevantEditorMutation(record) {
+    const candidate = 'textarea, dialog, .popup, .cm-editor-tools';
+    if (record.type === 'attributes') {
+        return record.target.matches(candidate) || Boolean(record.target.querySelector(candidate));
+    }
+    return [...record.addedNodes].some(node => node.nodeType === Node.ELEMENT_NODE
+        && (node.matches(candidate) || node.querySelector(candidate)));
+}
+
 function init() {
     let frame = 0;
-    new MutationObserver(() => {
-        if (frame) return;
+    new MutationObserver(records => {
+        if (frame || !records.some(relevantEditorMutation)) return;
         frame = requestAnimationFrame(() => {
             frame = 0;
             scan();

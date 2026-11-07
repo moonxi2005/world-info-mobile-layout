@@ -1,6 +1,6 @@
 # 酒馆界面优化合集
 
-面向 TauriTavern / SillyTavern 的七项界面改进，一个仓库一次安装。
+面向 TauriTavern / SillyTavern 的十项界面改进，一个仓库一次安装。
 
 ## 安装
 
@@ -20,7 +20,7 @@ https://github.com/moonxi2005/world-info-mobile-layout
 
 ## 包含功能
 
-在「扩展设置 → 酒馆界面优化合集」管理七项功能，修改开关后刷新。
+在「扩展设置 → 酒馆界面优化合集」管理十项功能，修改开关后刷新。
 
 ### 楼层导航
 
@@ -67,3 +67,16 @@ https://github.com/moonxi2005/world-info-mobile-layout
 ### 顶栏来源
 
 内置顶栏基于 [SillyTavern/Extension-TopInfoBar](https://github.com/SillyTavern/Extension-TopInfoBar)（Cohee1207，提交 `930be54913d90abd90ebd698ddd81affa924e2e1`）。`chat-top-bar.js` 调整了初始化与连接配置同步，原版样式和 jQuery 高亮辅助文件随附。许可见 `LICENSE-Chat-Top-Bar`。
+
+## 1.0.12
+
+- 聊天记录支持创建时间、更新时间、名称和文件大小排序，重命名输入框增加清空按钮。
+- 楼层列表增加 L，跳到最后一条消息末尾。
+- 消息省略号左侧增加红叉，直接删除当前候选回复，至少保留一版。
+- 查找替换支持换行和制表符转义，减少预设开关时的重复扫描。
+- 筛选方案补充多娜防截断和 Izumi 相关条目。
+- 加入对白引号显示兜底和快捷输入两行排版，可在合集设置中单独关闭。
+- AI 相邻正文段落间距为 12px。
+
+创建时间优先读取聊天元数据，缺失时取首条有效消息时间。更新时间按聊天列表提供的最后消息时间排序。首次按创建时间排序需要读取聊天文件。
+快捷输入排版需要酒馆助手提供对应按钮。候选回复红叉调用酒馆原生删除接口，生成期间禁用。

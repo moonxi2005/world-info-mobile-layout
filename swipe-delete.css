@@ -1,0 +1,14 @@
+#chat .mes .mes_buttons > button.tuit-delete-swipe {
+    color: #d44848 !important;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+    font-size: inherit;
+    cursor: pointer;
+}
+#chat .mes .mes_buttons > button.tuit-delete-swipe:disabled {
+    opacity: .25;
+    cursor: default;
+}

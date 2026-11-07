@@ -14,7 +14,7 @@ const {
 import { addJQueryHighlight } from './jquery-highlight.js';
 import { getGroupPastChats } from '../../../group-chats.js';
 import { getPastCharacterChats, animation_duration, animation_easing, getGeneratingApi } from '../../../../script.js';
-import { debounce, timestampToMoment, sortMoments, uuidv4, waitUntilCondition } from '../../../utils.js';
+import { debounce, timestampToMoment, uuidv4, waitUntilCondition } from '../../../utils.js';
 import { debounce_timeout } from '../../../constants.js';
 import { t } from '../../../i18n.js';
 
@@ -416,7 +416,107 @@ async function onToggleSidebarClick() {
     savePanelsState();
 }
 
-async function populateSideBar() {
+export function getHistorySort() {
+    return SillyTavern.getContext().extensionSettings.topInfoBarMobileFix?.historySort ?? 'newest';
+}
+
+const byName = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+
+function sizeInBytes(value) {
+    if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
+    const match = String(value ?? '').trim().match(/^(\d+(?:[.,]\d+)?)\s*(B|Bytes?|[KMGT]i?B)?$/i);
+    if (!match) return undefined;
+    const power = 'KMGT'.indexOf((match[2] ?? '').charAt(0).toUpperCase());
+    return Number(match[1].replace(',', '.')) * (match[2] && power >= 0 ? 1024 ** (power + 1) : 1);
+}
+
+function sortValue(row, sort, bySize) {
+    if (bySize) return sizeInBytes(row?.file_size);
+    return sort.startsWith('created-') ? row?.createdTime : row?.last_mes.valueOf();
+}
+
+export async function fetchHistoryChat(owner, name) {
+    const group = owner.startsWith('group:');
+    const avatar = group ? undefined : owner.slice('character:'.length);
+    const response = await fetch(group ? '/api/chats/group/get' : '/api/chats/get', {
+        method: 'POST',
+        headers: getRequestHeaders(),
+        body: JSON.stringify(group ? { id: name } : { avatar_url: avatar, file_name: name }),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    const messages = Array.isArray(data) ? data : data?.chat;
+    if (!Array.isArray(messages)) throw new Error('聊天数据格式无效');
+    return messages;
+}
+
+export function prepareCreationTimes(snapshot) {
+    return snapshot.creationPromise ??= (async () => {
+        const files = await snapshot.promise;
+        let index = 0;
+        async function loadNext() {
+            while (index < files.length && snapshot.owner === listOwner) {
+                const row = files[index++];
+                try {
+                    const listed = timestampToMoment(row.create_date ?? row.created_at).valueOf();
+                    if (Number.isFinite(listed)) {
+                        row.createdTime = listed;
+                        continue;
+                    }
+                    const messages = await fetchHistoryChat(snapshot.owner, row.file_name);
+                    const header = messages[0];
+                    const explicit = timestampToMoment(header?.create_date ?? header?.chat_metadata?.create_date).valueOf();
+                    if (Number.isFinite(explicit)) {
+                        row.createdTime = explicit;
+                        continue;
+                    }
+                    for (const message of messages) {
+                        const time = timestampToMoment(message.send_date).valueOf();
+                        if (!Number.isFinite(time)) continue;
+                        row.createdTime = time;
+                        break;
+                    }
+                } catch (error) {
+                    console.warn('[Chat Top Bar] 无法读取创建时间', error);
+                }
+            }
+        }
+        await Promise.all(Array.from({ length: Math.min(4, files.length) }, loadNext));
+        if (snapshot.owner !== listOwner) snapshot.creationPromise = undefined;
+    })();
+}
+
+export function compareHistory(a, b, metadata, sort) {
+    const names = byName.compare(a, b);
+    if (sort === 'az' || sort === 'za') return sort === 'az' ? names : -names;
+    const first = metadata.get(a);
+    const second = metadata.get(b);
+    const bySize = sort === 'largest' || sort === 'smallest';
+    const x = sortValue(first, sort, bySize);
+    const y = sortValue(second, sort, bySize);
+    if (!Number.isFinite(x)) return Number.isFinite(y) ? 1 : names;
+    if (!Number.isFinite(y)) return -1;
+    return (sort === 'oldest' || sort === 'created-oldest' || sort === 'smallest' ? x - y : y - x) || names;
+}
+
+export function getHistorySnapshot() {
+    const owner = listOwner;
+    if (sidebarSnapshot && sidebarSnapshot.owner === owner && Date.now() - sidebarSnapshot.time <= 30000) return sidebarSnapshot;
+    const snapshot = { owner, time: Date.now(), metadata: new Map() };
+    sidebarSnapshot = snapshot;
+    snapshot.promise = getChatFiles().then(files => files.map(file => {
+        const row = { ...file, last_mes: timestampToMoment(file.last_mes), file_name: String(file.file_name).replace(/\.jsonl$/i, '') };
+        snapshot.metadata.set(row.file_name, row);
+        return row;
+    })).catch(error => {
+        if (sidebarSnapshot === snapshot) sidebarSnapshot = undefined;
+        console.warn('[Chat Top Bar] 历史列表加载失败', error);
+        return [];
+    });
+    return snapshot;
+}
+
+export async function populateSideBar() {
     const sidebar = document.getElementById('extensionSideBar');
     const loader = document.getElementById('extensionSideBarLoader');
     const container = document.getElementById('extensionSideBarContainer');
@@ -433,33 +533,27 @@ async function populateSideBar() {
     loader.classList.add('displayNone');
     const processId = uuidv4();
     const scrollTop = container.scrollTop;
-    const prettify = x => ({ ...x, last_mes: timestampToMoment(x.last_mes), file_name: String(x.file_name).replace(/\.jsonl$/i, '') });
     container.dataset.processId = processId;
     const chatId = getCurrentChatId();
     const owner = listOwner;
-    if (!sidebarSnapshot || sidebarSnapshot.owner !== owner || Date.now() - sidebarSnapshot.time > 30000) {
-        const snapshot = { owner, time: Date.now() };
-        snapshot.promise = getChatFiles().then(files => files.map(prettify).sort((a, b) => sortMoments(a.last_mes, b.last_mes))).catch(error => {
-            if (sidebarSnapshot === snapshot) sidebarSnapshot = undefined;
-            console.warn('[Chat Top Bar] 历史列表加载失败', error);
-            return [];
-        });
-        sidebarSnapshot = snapshot;
-    }
-    const snapshot = sidebarSnapshot;
-    const chats = await snapshot.promise;
+    const snapshot = getHistorySnapshot();
+    const files = await snapshot.promise;
+    const sort = getHistorySort();
+    if (sort.startsWith('created-')) await prepareCreationTimes(snapshot);
+    const chats = [...files].sort((a, b) => compareHistory(a.file_name, b.file_name, snapshot.metadata, sort));
 
     if (!sidebar.classList.contains('visible') || container.dataset.processId !== processId || chatId !== getCurrentChatId() || owner !== listOwner) {
         console.log(t`Aborting populateSideBar due to process id mismatch`);
         return;
     }
 
-    if (container.dataset.snapshot === snapshot.id && container.childElementCount) {
+    if (container.dataset.snapshot === snapshot.id && container.dataset.sort === sort && container.childElementCount) {
         for (const item of container.children) item.classList.toggle('selected', item.dataset.chatId === chatId);
         return;
     }
     snapshot.id ??= processId;
     container.dataset.snapshot = snapshot.id;
+    container.dataset.sort = sort;
     container.replaceChildren();
 
     for (const chat of chats) {
