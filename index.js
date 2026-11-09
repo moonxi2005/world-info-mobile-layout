@@ -6,6 +6,7 @@ async function startToolkit() {
     const settings = context.extensionSettings.tavernUiToolkit ??= {};
     const enabled = settings.modules ??= {};
     const features = [
+        { id: 'remote-sync', name: 'TT 远程同步', description: '通过私有组网地址连接，复用 TT 原生设备配对和同步。', action: '连接远程设备', event: 'remote-sync' },
         { id: 'floor-navigator', name: '楼层快速导航', description: '聊天左侧的楼层列表、摘要预览和拖动定位。', action: '重置楼层位置', event: 'reset-floor-position' },
         { id: 'topbar-enhancements', name: '顶栏增强与聊天总结', description: '聊天记录下拉和侧栏、改名快捷词、总结与悬停预览。', action: '快捷词与总结设置', event: 'topbar-settings' },
         { id: 'prompt-itemization-wide', name: '提示词拆分双栏', description: '在电脑窗口内并排查看统计和提示词正文。' },
@@ -23,6 +24,7 @@ async function startToolkit() {
         catch { enabled['floor-navigator'] = true; }
     }
     const initial = new Map(features.map(feature => [feature.id, enabled[feature.id] !== false]));
+    const moduleVersion = '1.0.23';
     const loaded = new Set();
     const actions = new Map();
 
@@ -33,11 +35,20 @@ async function startToolkit() {
         const panel = document.createElement('details');
         panel.id = 'tavern-ui-toolkit-settings';
         const heading = document.createElement('summary');
-        heading.textContent = '酒馆界面优化合集';
+        heading.className = 'inline-drawer-header tuit-settings-header';
+        const title = document.createElement('b');
+        title.textContent = '酒馆界面优化合集';
+        const arrow = document.createElement('i');
+        arrow.className = 'fa-solid fa-circle-chevron-down tuit-settings-arrow';
+        arrow.setAttribute('aria-hidden', 'true');
+        heading.append(title, arrow);
+        const body = document.createElement('div');
+        body.className = 'tuit-settings-body';
         const status = document.createElement('p');
         status.setAttribute('aria-live', 'polite');
         status.textContent = '各项开关独立保存，刷新酒馆后生效。';
-        panel.append(heading, status);
+        panel.append(heading, body);
+        body.append(status);
         for (const feature of features) {
             const row = document.createElement('div');
             row.className = 'tuit-settings-row';
@@ -65,7 +76,7 @@ async function startToolkit() {
                 actions.set(feature.id, action);
                 row.append(action);
             }
-            panel.append(row);
+            body.append(row);
         }
         host.append(panel);
         return true;
@@ -79,20 +90,20 @@ async function startToolkit() {
         if (!initial.get(feature.id)) continue;
         const stylesheet = document.createElement('link');
         stylesheet.rel = 'stylesheet';
-        stylesheet.href = new URL(`./${feature.id}.css`, import.meta.url).href;
+        stylesheet.href = new URL(`./${feature.id}.css?v=${moduleVersion}`, import.meta.url).href;
         try {
             await new Promise((resolve, reject) => {
                 stylesheet.addEventListener('load', resolve, { once: true });
                 stylesheet.addEventListener('error', reject, { once: true });
                 document.head.append(stylesheet);
             });
-            if (feature.id === 'topbar-enhancements') await import('./chat-top-bar.js');
-            await import(`./${feature.id}.js`);
+            if (feature.id === 'topbar-enhancements') await import('./chat-top-bar.js?v=' + moduleVersion);
+            await import(`./${feature.id}.js?v=${moduleVersion}`);
             loaded.add(feature.id);
             const action = actions.get(feature.id);
             if (action) action.disabled = false;
         } catch (error) {
-            stylesheet.remove();
+            if (feature.id !== 'topbar-enhancements') stylesheet.remove();
             console.error(`[酒馆界面优化合集] ${feature.name} 加载失败`, error);
         }
     }

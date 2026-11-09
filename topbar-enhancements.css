@@ -1,4 +1,4 @@
-@import url("chat-top-bar.css");
+@import url("chat-top-bar.css?v=1.0.23");
 
 /*
  * Chat Top Info Bar — Mobile Layout Fix
@@ -255,3 +255,32 @@
     #extensionTopBarNewChat { right: 154px; }
     #extensionTopBarChatManager { right: 184px; }
 }
+
+#tib-history-panel .tib-history-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 28px;
+    align-items: center;
+    gap: 2px;
+}
+#tib-history-panel .tib-history-item .tib-history-row { min-width: 0; }
+#tib-history-panel .tib-history-delete {
+    color: #c64b4b;
+    padding: 4px;
+    width: 28px;
+    font-size: 18px;
+}
+
+#tib-history-panel .tib-history-batch {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+}
+#tib-history-panel .tib-history-batch [hidden],
+#tib-history-panel .tib-history-delete[hidden] { display: none; }
+#tib-history-panel .tib-history-item.tib-history-multi {
+    grid-template-columns: 22px minmax(0, 1fr);
+}
+#tib-history-panel .tib-history-check { margin: 0; }
+#tib-history-panel .tib-batch-busy { pointer-events: none; opacity: .6; }

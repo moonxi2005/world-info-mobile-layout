@@ -9,13 +9,14 @@ function refresh() {
     const messages = context().chat ?? [];
     for (const floor of chat.querySelectorAll('.mes[mesid]')) {
         const message = messages[Number(floor.getAttribute('mesid'))];
-        const anchor = floor.querySelector('.mes_buttons > .extraMesButtonsHint');
+        const anchor = floor.querySelector('.mes_buttons .extraMesButtonsHint');
         if (!anchor || !message || message.is_user || message.is_system) continue;
         let button = floor.querySelector('.tuit-delete-swipe');
         if (!button) {
             button = document.createElement('button');
             button.type = 'button';
-            button.className = 'mes_button tuit-delete-swipe fa-solid fa-xmark';
+            button.className = 'mes_button tuit-delete-swipe';
+            button.textContent = '×';
             button.setAttribute('aria-label', '删除当前候选回复');
             anchor.before(button);
         }
@@ -61,18 +62,30 @@ function schedule() {
 }
 
 document.addEventListener('click', removeCurrent);
-new MutationObserver(records => {
+let chatRoot;
+const messageObserver = new MutationObserver(records => {
     if (records.some(record => [...record.addedNodes].some(node =>
         node.nodeType === Node.ELEMENT_NODE && (
             node.matches('.mes[mesid], .mes_buttons, .extraMesButtonsHint')
             || node.querySelector('.mes[mesid], .mes_buttons, .extraMesButtonsHint')
         )))) schedule();
-}).observe(document.getElementById('chat') ?? document.body, { childList: true, subtree: true });
+});
+function bindChat() {
+    const current = document.getElementById('chat');
+    if (current !== chatRoot) {
+        messageObserver.disconnect();
+        chatRoot = current;
+        if (chatRoot) messageObserver.observe(chatRoot, { childList: true, subtree: true });
+        schedule();
+    }
+}
+new MutationObserver(bindChat).observe(document.body, { childList: true, subtree: true });
+bindChat();
 
 const ctx = context();
 for (const name of ['CHAT_CHANGED', 'MESSAGE_RECEIVED', 'MESSAGE_SWIPED', 'MESSAGE_SWIPE_DELETED',
     'MESSAGE_DELETED', 'MORE_MESSAGES_LOADED', 'GENERATION_STARTED', 'GENERATION_ENDED', 'GENERATION_STOPPED']) {
     const type = ctx.event_types?.[name] ?? ctx.eventTypes?.[name];
-    if (type) ctx.eventSource.on(type, schedule);
+    if (type) ctx.eventSource.on(type, () => { bindChat(); schedule(); });
 }
 refresh();

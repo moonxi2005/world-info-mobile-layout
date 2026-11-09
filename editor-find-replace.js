@@ -1,6 +1,7 @@
 import { decodeEditorText, findMatches } from './editor-find-replace-matches.js';
 
 const selector = [
+    '#ln-panel textarea',
     'textarea.edit_textarea',
     'dialog textarea',
     '#dialogue_popup textarea',

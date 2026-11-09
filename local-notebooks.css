@@ -43,6 +43,9 @@
     box-shadow: 0 4px 16px #0004;
 }
 .ln-panel[hidden] { display: none; }
+.ln-panel:has(> .efr-toolbar) {
+    grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
+}
 .ln-panel header, .ln-toolbar {
     display: flex;
     align-items: center;

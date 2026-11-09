@@ -13,6 +13,8 @@ const {
 } = SillyTavern.getContext();
 import { addJQueryHighlight } from './jquery-highlight.js';
 import { getGroupPastChats } from '../../../group-chats.js';
+import * as groupApi from '../../../group-chats.js';
+import * as chatApi from '../../../../script.js';
 import { getPastCharacterChats, animation_duration, animation_easing, getGeneratingApi } from '../../../../script.js';
 import { debounce, timestampToMoment, uuidv4, waitUntilCondition } from '../../../utils.js';
 import { debounce_timeout } from '../../../constants.js';
@@ -416,6 +418,65 @@ async function onToggleSidebarClick() {
     savePanelsState();
 }
 
+let deletingHistory = false;
+export async function moveHistoryChat(owner, name, targetAvatar) {
+    const c = SillyTavern.getContext();
+    if (!owner.startsWith('character:') || c.groupId) throw new Error('请选择角色卡聊天');
+    if (chatApi.isGenerating?.() || c.isSendPress || c.isGroupGenerating) throw new Error('请先停止生成再移动');
+    const targetId = c.characters.findIndex(item => item.avatar === targetAvatar);
+    if (targetId < 0 || owner === `character:${targetAvatar}`) throw new Error('请选择其他角色卡');
+    if (owner !== `character:${c.characters[c.characterId]?.avatar}`) throw new Error('当前角色已变化');
+    if (name === getCurrentChatId()) await c.saveChat();
+    const original = await fetchHistoryChat(owner, name);
+    const existing = new Set((await getPastCharacterChats(targetId)).map(row => String(row.file_name).replace(/\.jsonl$/i, '')));
+    let next = name, n = 1;
+    while (existing.has(next)) next = `${name} - 移入${n++}`;
+    if (new TextEncoder().encode(next + '.jsonl').length > 255) throw new Error('目标名称过长，请先缩短名称');
+    const response = await fetch('/api/chats/save', {
+        method: 'POST', headers: getRequestHeaders(),
+        body: JSON.stringify({ avatar_url: targetAvatar, file_name: next, chat: original }),
+    });
+    const result = await response.json();
+    if (!response.ok || result.error) throw new Error('目标保存失败，原记录已保留');
+    const stored = await fetchHistoryChat(`character:${targetAvatar}`, next);
+    if (JSON.stringify(stored) !== JSON.stringify(original)) throw new Error('目标校验未通过，原记录已保留');
+    await deleteHistoryChat(owner, name);
+    return next;
+}
+export async function deleteHistoryChat(owner, name) {
+    if (deletingHistory) throw new Error('正在删除其他聊天，请稍候');
+    const current = SillyTavern.getContext();
+    const actualOwner = current.groupId ? `group:${current.groupId}`
+        : `character:${current.characters?.[current.characterId]?.avatar ?? ''}`;
+    if (owner !== actualOwner) throw new Error('当前角色已变化，请重新打开聊天列表');
+    if (chatApi.isGenerating?.() || current.isSendPress || current.isGroupGenerating) throw new Error('请先停止生成再删除聊天');
+    deletingHistory = true;
+    const groupId = current.groupId;
+    const characterId = current.characterId;
+    const wasActive = name === getCurrentChatId();
+    const chatAtStart = current.chat;
+    try {
+        if (groupId) await groupApi.deleteGroupChatByName(groupId, name);
+        else await chatApi.deleteCharacterChatByName(characterId, name);
+        const files = groupId ? await getGroupPastChats(groupId) : await getPastCharacterChats(characterId);
+        if (files.some(file => String(file.file_name).replace(/\.jsonl$/i, '') === name)) {
+            throw new Error('聊天仍在列表中，删除未成功');
+        }
+        chatNamesCache.clear();
+        sidebarSnapshot = undefined;
+        if (listOwner !== owner) return;
+        if (wasActive && SillyTavern.getContext().chat === chatAtStart) {
+            if (groupId) {
+                const group = SillyTavern.getContext().groups?.find(item => String(item.id) === String(groupId));
+                if (group) await openGroupChat(groupId, group.chat_id);
+            } else await chatApi.replaceCurrentChat();
+        }
+        await setChatName(getCurrentChatId());
+    } finally {
+        deletingHistory = false;
+    }
+}
+
 export function getHistorySort() {
     return SillyTavern.getContext().extensionSettings.topInfoBarMobileFix?.historySort ?? 'newest';
 }
@@ -436,6 +497,10 @@ function sortValue(row, sort, bySize) {
 }
 
 export async function fetchHistoryChat(owner, name) {
+    // Windows accepts some Unicode filenames that exceed TT's UTF-8 byte limit.
+    // Reject locally before a background preview produces a backend error toast.
+    const filename = String(name).replace(/\.jsonl$/i, '') + '.jsonl';
+    if (new TextEncoder().encode(filename).length > 255) throw new Error('聊天名称过长，请缩短名称后重试');
     const group = owner.startsWith('group:');
     const avatar = group ? undefined : owner.slice('character:'.length);
     const response = await fetch(group ? '/api/chats/group/get' : '/api/chats/get', {

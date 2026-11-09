@@ -1,5 +1,5 @@
 // Chat Top Bar companion: mobile layout, rename shortcuts and saved summaries.
-import { compareHistory, fetchHistoryChat, getHistorySnapshot, getHistorySort, populateSideBar, prepareCreationTimes } from './chat-top-bar.js';
+import { moveHistoryChat, deleteHistoryChat, compareHistory, fetchHistoryChat, getHistorySnapshot, getHistorySort, populateSideBar, prepareCreationTimes } from './chat-top-bar.js?v=1.0.23';
 
 (() => {
     if (window.__tibEnhancements) return;
@@ -284,7 +284,101 @@ import { compareHistory, fetchHistoryChat, getHistorySnapshot, getHistorySort, p
     const historyTools = document.createElement('div');
     historyTools.className = 'tib-history-tools';
     historyTools.append(historySearch, sort);
+    let multiSelect = false;
+    let batchDeleting = false;
+    let selectionOwner = '';
+    let filteredNames = [];
+    const selectedChats = new Set();
+    const batchTools = document.createElement('div');
+    batchTools.className = 'tib-history-batch';
+    const selectionToggle = button('多选', '勾选多份聊天记录', () => {
+        if (batchDeleting) return;
+        multiSelect = !multiSelect;
+        if (!multiSelect) selectedChats.clear();
+        renderHistory();
+    });
+    const selectAll = button('全选搜索结果', '选择当前搜索命中的全部聊天，包括未展开的记录', () => {
+        for (const name of filteredNames) selectedChats.add(name);
+        renderHistory();
+    });
+    const clearSelection = button('清空选择', '取消所有勾选', () => {
+        selectedChats.clear();
+        renderHistory();
+    });
+    const deleteSelected = button('☠ 删除所选', '删除勾选的聊天记录', async () => {
+        if (batchDeleting || !selectedChats.size) return;
+        const owner = scope();
+        const active = stripExt(ctx().getCurrentChatId?.());
+        const names = [...selectedChats].sort((a, b) => Number(a === active) - Number(b === active));
+        if (!window.confirm('确认删除选中的 ' + names.length + ' 份聊天记录？')) return;
+        batchDeleting = true;
+        updateBatchControls();
+        let deleted = 0;
+        try {
+            for (const name of names) {
+                if (scope() !== owner) throw new Error('当前角色已变化，已停止后续删除');
+                await deleteHistoryChat(owner, name);
+                delete settings().summaries[key(owner, name)];
+                firstMessageCache.delete(key(owner, name));
+                selectedChats.delete(name);
+                deleted++;
+                updateBatchControls();
+            }
+            notice('success', '已删除 ' + deleted + ' 份聊天记录');
+        } catch (error) {
+            notice('error', '已删除 ' + deleted + ' 份，后续删除已停止。' + error.message);
+        } finally {
+            persist();
+            batchDeleting = false;
+            updateBatchControls();
+            if (!panel.hidden) await renderHistory();
+        }
+    });
+    const moveSelected = button('移动所选', '移动到其他角色卡', async () => {
+        if (batchDeleting || !selectedChats.size) return;
+        const owner = scope();
+        if (!owner.startsWith('character:')) { notice('info', '请选择角色卡聊天'); return; }
+        const names = [...selectedChats].sort((a, b) => Number(a === stripExt(ctx().getCurrentChatId?.())) - Number(b === stripExt(ctx().getCurrentChatId?.())));
+        const { Popup, POPUP_TYPE } = await import('../../../popup.js');
+        const box = document.createElement('div');
+        const heading = document.createElement('p'); heading.textContent = '将 ' + names.length + ' 份聊天移动到：';
+        const target = document.createElement('select'); target.className = 'text_pole';
+        for (const character of ctx().characters) {
+            if (character.avatar && owner !== 'character:' + character.avatar) target.add(new Option(character.name || character.avatar, character.avatar));
+        }
+        if (!target.options.length) { notice('info', '请先添加其他角色卡'); return; }
+        const help = document.createElement('p'); help.textContent = '保留正文、候选回复及元数据；重名时追加编号。目标保存并校验后才删除来源。';
+        box.append(heading, target, help);
+        if (await new Popup(box, POPUP_TYPE.CONFIRM, null, {okButton:'移动', cancelButton:'取消'}).show() !== 1) return;
+        batchDeleting = true; updateBatchControls();
+        let moved = 0;
+        try {
+            for (const name of names) {
+                if (scope() !== owner) throw new Error('当前角色已变化，已停止');
+                const next = await moveHistoryChat(owner, name, target.value);
+                const summary = settings().summaries[key(owner, name)];
+                if (summary) settings().summaries[key('character:' + target.value, next)] = summary;
+                delete settings().summaries[key(owner, name)];
+                firstMessageCache.delete(key(owner, name)); selectedChats.delete(name); moved++;
+            }
+            notice('success', '已移动 ' + moved + ' 份聊天记录');
+        } catch (error) { notice('error', '已移动 ' + moved + ' 份，后续已停止：' + error.message); }
+        finally { persist(); batchDeleting = false; updateBatchControls(); if (!panel.hidden) await renderHistory(); }
+    });
+    function updateBatchControls() {
+        selectionToggle.textContent = multiSelect ? '退出多选' : '多选';
+        selectionToggle.disabled = batchDeleting;
+        selectAll.hidden = clearSelection.hidden = deleteSelected.hidden = moveSelected.hidden = !multiSelect;
+        moveSelected.disabled = batchDeleting || selectedChats.size === 0;
+        selectAll.disabled = clearSelection.disabled = batchDeleting;
+        deleteSelected.disabled = batchDeleting || selectedChats.size === 0;
+        deleteSelected.textContent = '☠ 删除所选（' + selectedChats.size + '）';
+        historyRows.classList.toggle('tib-batch-busy', batchDeleting);
+    }
+    batchTools.append(selectionToggle, selectAll, clearSelection, moveSelected, deleteSelected);
+    historyTools.append(batchTools);
     panel.append(historyTools, historyRows);
+    updateBatchControls();
     let renderRevision = 0;
     const pageSize = 60;
     let historyLimit = pageSize;
@@ -379,6 +473,12 @@ import { compareHistory, fetchHistoryChat, getHistorySnapshot, getHistorySort, p
         hideHistoryPreview(); historyRows.replaceChildren();
         const terms = historySearch.value.normalize('NFKC').toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);
         const owner = scope(), summaries = settings().summaries;
+        if (selectionOwner !== owner) {
+            selectedChats.clear();
+            selectionOwner = owner;
+        }
+        const existing = new Set([...select.options].map(option => stripExt(option.value)));
+        for (const name of selectedChats) if (!existing.has(name)) selectedChats.delete(name);
         const matches = [...select.options].filter(option => {
             if (!option.value) return false;
             if (!terms.length) return true;
@@ -395,14 +495,65 @@ import { compareHistory, fetchHistoryChat, getHistorySnapshot, getHistorySort, p
             sortMetadata = snapshot.metadata;
         }
         matches.sort((a, b) => compareHistory(a.value, b.value, sortMetadata, order));
+        filteredNames = matches.map(option => stripExt(option.value));
+        updateBatchControls();
         for (const option of matches.slice(0, historyLimit)) {
             const row = button(option.textContent, '', () => {
+                if (batchDeleting) return;
+                if (multiSelect) {
+                    const name = stripExt(option.value);
+                    if (selectedChats.has(name)) selectedChats.delete(name);
+                    else selectedChats.add(name);
+                    const checkbox = row.parentElement.querySelector('.tib-history-check');
+                    if (checkbox) checkbox.checked = selectedChats.has(name);
+                    updateBatchControls();
+                    return;
+                }
                 closeHistory();
                 if (stripExt(ctx().getCurrentChatId?.()) !== stripExt(option.value)) { select.value = option.value; select.dispatchEvent(new Event('change', { bubbles: true })); }
             });
             row.classList.add('tib-history-row'); row.classList.toggle('tib-selected', option.selected);
             const detail = document.createElement('span'); detail.className = 'tib-history-summary';
-            row.append(detail); historyRows.append(row);
+            row.append(detail);
+            const item = document.createElement('div');
+            item.className = 'tib-history-item';
+            const remove = button('☠', '删除这份聊天记录', async () => {
+                if (batchDeleting) return;
+                const name = stripExt(option.value);
+                if (!window.confirm(`删除聊天记录「${option.textContent}」？`)) return;
+                remove.disabled = true;
+                try {
+                    await deleteHistoryChat(owner, name);
+                    delete settings().summaries[key(owner, name)];
+                    firstMessageCache.delete(key(owner, name));
+                    persist();
+                    if (!panel.hidden) await renderHistory();
+                } catch (error) {
+                    notice('error', error.message || '删除聊天失败');
+                    remove.disabled = false;
+                }
+            });
+            remove.setAttribute('aria-label', `删除聊天记录 ${option.textContent}`);
+            remove.classList.add('tib-history-delete');
+            item.classList.toggle('tib-history-multi', multiSelect);
+            if (multiSelect) {
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'tib-history-check';
+                checkbox.checked = selectedChats.has(stripExt(option.value));
+                checkbox.disabled = batchDeleting;
+                checkbox.setAttribute('aria-label', '选择聊天记录 ' + option.textContent);
+                checkbox.addEventListener('change', () => {
+                    const name = stripExt(option.value);
+                    if (checkbox.checked) selectedChats.add(name);
+                    else selectedChats.delete(name);
+                    updateBatchControls();
+                });
+                item.append(checkbox);
+            }
+            remove.hidden = multiSelect;
+            item.append(row, remove);
+            historyRows.append(item);
             attachPreview(row, option.value, detail);
         }
         if (!matches.length) {
@@ -411,10 +562,10 @@ import { compareHistory, fetchHistoryChat, getHistorySnapshot, getHistorySort, p
             empty.textContent = '没有匹配的聊天记录';
             historyRows.append(empty);
         } else if (matches.length > historyLimit) {
-            const more = button(`显示更多（${historyLimit} / ${matches.length}）`, '', () => {
+            const more = button(`显示更多（${historyLimit} / ${matches.length}）`, '', async () => {
                 const scroll = panel.scrollTop;
                 historyLimit += pageSize;
-                renderHistory();
+                await renderHistory();
                 panel.scrollTop = scroll;
             });
             historyRows.append(more);
@@ -462,7 +613,7 @@ import { compareHistory, fetchHistoryChat, getHistorySnapshot, getHistorySort, p
         }
         refreshTitles();
     }
-    document.addEventListener('click', event => { if (!panel.contains(event.target) && event.target !== historyButton) closeHistory(); });
+    document.addEventListener('click', event => { if (!event.composedPath().includes(panel) && !event.composedPath().includes(historyButton)) closeHistory(); });
     document.addEventListener('keydown', event => { if (event.key === 'Escape') closeHistory(); });
     window.addEventListener('resize', positionHistory); document.addEventListener('scroll', positionHistory, true);
     window.addEventListener('resize', hideHistoryPreview);

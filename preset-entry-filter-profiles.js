@@ -8,6 +8,19 @@ export const donutProfile = {
     "ef56cce3-ecd2-4790-895b-8bc019fb3275"
   ],
   "schemes": [
+{
+  "id": "donut-common",
+  "label": "常用条目",
+  "includeDonut": true,
+  "ids": [
+    "acb1404b-424d-550a-ad5f-baca726eec7d",
+    "6614639b-2d8e-5947-bd1a-8923e60108c6",
+    "e78419f1-a590-4042-84b2-6a90c08fd64d",
+    "e9ea7874-328f-4d90-b629-e265d0c95f63",
+    "0de4e58c-b792-576c-8b73-b6d725362bc2",
+    "6031612d-5e05-5440-af1f-64ce8402df2c"
+  ]
+},
     {
       "id": "donut-style-all",
       "label": "多娜 · 全部文风与基调",

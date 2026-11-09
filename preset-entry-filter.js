@@ -166,6 +166,12 @@ async function apply() {
         return;
     }
     updateSchemes(rows);
+    const scheme = donutProfile.schemes.find(item => item.id === schemeId);
+    if (scheme?.includeDonut) {
+        const extra = new Set(scheme.ids);
+        filter.allowedIds = rows.filter(row => row.source === 'donut' || extra.has(row.id)).map(row => row.id);
+    }
+
     sections(rows);
     const active = enabled && (filter.allowedIds || filter.query.trim() || Object.keys(defaults).some(k => k !== 'query' && filter[k] !== defaults[k]));
     const selected = active ? selectRows(rows, filter, keepHeadings) : null;

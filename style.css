@@ -1,12 +1,15 @@
-#tavern-ui-toolkit-settings { margin-block: 8px; padding: 8px 10px; border: 1px solid var(--SmartThemeBorderColor, #8885); border-radius: 8px; }
-#tavern-ui-toolkit-settings > summary { cursor: pointer; font-weight: 600; }
-#tavern-ui-toolkit-settings > p { margin: 8px 0; font-size: .85em; }
-#tavern-ui-toolkit-settings .tuit-settings-row { display: grid; gap: 4px; padding: 8px 0; border-top: 1px solid var(--SmartThemeBorderColor, #8885); }
-#tavern-ui-toolkit-settings .tuit-settings-row label { display: flex; align-items: center; gap: 7px; cursor: pointer; }
-#tavern-ui-toolkit-settings .tuit-settings-row small { opacity: .8; }
-#tavern-ui-toolkit-settings .tuit-settings-row button { justify-self: start; }
 
 /* tuit-compact-prose: space adjacent AI prose paragraphs without changing line height. */
 #chat .mes[is_user="false"] .mes_text > p:has(+ p) {
     margin-bottom: 12px;
 }
+
+#tavern-ui-toolkit-settings > summary { display: flex; align-items: center; justify-content: space-between; list-style: none; cursor: pointer; }
+#tavern-ui-toolkit-settings > summary::-webkit-details-marker { display: none; }
+#tavern-ui-toolkit-settings[open] .tuit-settings-arrow { transform: rotate(180deg); }
+#tavern-ui-toolkit-settings .tuit-settings-body { padding: 4px 10px 8px; }
+#tavern-ui-toolkit-settings .tuit-settings-body > p { margin: 6px 0; font-size: .85em; opacity: .8; }
+#tavern-ui-toolkit-settings .tuit-settings-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 8px; padding: 7px 0; border-top: 1px solid var(--SmartThemeBorderColor, #8885); }
+#tavern-ui-toolkit-settings .tuit-settings-row label { grid-column: 1; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+#tavern-ui-toolkit-settings .tuit-settings-row small { grid-column: 1 / -1; opacity: .8; }
+#tavern-ui-toolkit-settings .tuit-settings-row button { grid-column: 2; grid-row: 1; margin: 0; width: auto; font-size: .85em; }
