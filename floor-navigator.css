@@ -34,3 +34,5 @@
 .fn-jump-highlight { animation: fn-flash 1.6s ease-out; }
 @keyframes fn-flash { from { box-shadow: inset 3px 0 #e5a779, inset 0 0 0 1px #e5a77988; } to { box-shadow: inset 3px 0 transparent; } }
 @media (prefers-reduced-motion: reduce) { .fn-jump-highlight { animation: none; outline: 1px solid #e5a779; } }
+
+body:has(#floor-navigator:not([hidden])) #chat{box-sizing:border-box;padding-left:var(--fn-chat-inset,8px);padding-right:8px}

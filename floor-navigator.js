@@ -37,7 +37,8 @@
         }
         return savedPositions[key];
     }
-    const clampTop = top => Math.max(4, Math.min(Math.max(4, innerHeight - 48), top));
+    const chatBottom = () => Math.min(innerHeight, chatElement?.getBoundingClientRect().bottom ?? innerHeight);
+    const clampTop = top => Math.max(4, Math.min(chatBottom() - 42, top));
     toggle.addEventListener('pointerdown', event => {
         if (!event.isPrimary || event.button !== 0) return;
         drag = { id: event.pointerId, startY: event.clientY, top: nav.getBoundingClientRect().top, moved: false, key: positionKey() };
@@ -128,7 +129,7 @@
         nav.hidden = !context().chat?.length || r.width === 0 || r.height === 0;
         const left = r.left >= 52 ? r.left - 50 : Math.max(2, r.left + 2);
         let top = Math.max(4, r.top + 12);
-        let maxHeight = Math.max(30, Math.min(r.height - 24, innerHeight - r.top - 24));
+
         if (matchMedia(phoneQuery).matches) {
             top += 16;
             // Keep clear of both the two-row toolbar and its optional connection row.
@@ -136,16 +137,19 @@
                 const bar = document.getElementById(id);
                 if (bar?.getClientRects().length) top = Math.max(top, bar.getBoundingClientRect().bottom + 12);
             }
-            maxHeight = Math.max(30, Math.min(r.bottom, innerHeight) - top - 12);
+
         }
         const manualY = savedY();
         if (manualY !== null) {
             top = clampTop(manualY * Math.max(4, innerHeight - 48));
-            maxHeight = Math.max(30, innerHeight - top - 8);
+
         }
         nav.style.left = `${left}px`;
+        const inset=Math.ceil(Math.max(8,left+nav.offsetWidth+8-r.left));
+        if(chatElement.style.getPropertyValue('--fn-chat-inset')!==inset+'px')chatElement.style.setProperty('--fn-chat-inset',inset+'px');
+        top=clampTop(top);
         nav.style.top = `${top}px`;
-        nav.style.maxHeight = `${maxHeight}px`;
+        nav.style.maxHeight = `${Math.max(0, Math.min(r.bottom,innerHeight)-top-12)}px`;
     }
 
     async function showPreview(button) {
@@ -282,13 +286,16 @@
     list.addEventListener('keydown', event => { if (event.key === 'Escape') hidePreview(); });
     window.addEventListener('resize', () => { position(); hidePreview(); });
 
+    const chatResize=new ResizeObserver(()=>position());
     function bindChat() {
         const element = document.getElementById('chat');
         if (element === chatElement) return;
         observer?.disconnect();
+        chatResize.disconnect();
         chatElement?.removeEventListener('scroll', scheduleCurrent);
         chatElement = element;
         if (element) {
+            chatResize.observe(element);
             element.addEventListener('scroll', scheduleCurrent, { passive: true });
             observer = new MutationObserver(scheduleRender);
             observer.observe(element, { childList: true, subtree: true, characterData: true });

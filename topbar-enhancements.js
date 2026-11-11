@@ -1,5 +1,5 @@
 // Chat Top Bar companion: mobile layout, rename shortcuts and saved summaries.
-import { moveHistoryChat, deleteHistoryChat, compareHistory, fetchHistoryChat, getHistorySnapshot, getHistorySort, populateSideBar, prepareCreationTimes } from './chat-top-bar.js?v=1.0.23';
+import { moveHistoryChat, deleteHistoryChat, compareHistory, fetchHistoryChat, getHistorySnapshot, getHistorySort, populateSideBar, prepareCreationTimes } from './chat-top-bar.js?v=1.0.27';
 
 (() => {
     if (window.__tibEnhancements) return;

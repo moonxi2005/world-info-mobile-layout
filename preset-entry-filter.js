@@ -11,6 +11,7 @@ let root, manager, observer, timer, dialog;
 let stopped = false;
 let importPending = null;
 let schemeId = 'all';
+let pendingStartupScheme = true;
 const genericSchemes = [
     { id: 'all', label: '自定义 / 全部条目', filter: {} },
     { id: 'on', label: '当前已开启', filter: { status: 'on' } },
@@ -81,6 +82,7 @@ function mount(list) {
     quickWrap.append(el('span', {}, '快捷筛选方案'));
     const quick = el('select', { 'data-scheme': '', 'aria-label': '快捷筛选方案' });
     quick.addEventListener('change', () => {
+        pendingStartupScheme = false;
         schemeId = quick.value;
         const generic = genericSchemes.find(s => s.id === schemeId);
         const specific = donutProfile.schemes.find(s => s.id === schemeId);
@@ -108,6 +110,7 @@ function mount(list) {
 }
 
 function reset() {
+    pendingStartupScheme = false;
     schemeId = 'all';
     filter = { ...defaults };
     const quick = root?.querySelector('[data-scheme]');
@@ -135,6 +138,10 @@ function updateSchemes(rows) {
     if (!supported && donutProfile.schemes.some(s => s.id === schemeId)) {
         schemeId = 'all';
         delete filter.allowedIds;
+    }
+    if (supported && pendingStartupScheme) {
+        pendingStartupScheme = false;
+        schemeId = 'donut-common';
     }
     input.value = schemeId;
 }

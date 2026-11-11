@@ -10,6 +10,7 @@ async function startToolkit() {
         { id: 'floor-navigator', name: '楼层快速导航', description: '聊天左侧的楼层列表、摘要预览和拖动定位。', action: '重置楼层位置', event: 'reset-floor-position' },
         { id: 'topbar-enhancements', name: '顶栏增强与聊天总结', description: '聊天记录下拉和侧栏、改名快捷词、总结与悬停预览。', action: '快捷词与总结设置', event: 'topbar-settings' },
         { id: 'prompt-itemization-wide', name: '提示词拆分双栏', description: '在电脑窗口内并排查看统计和提示词正文。' },
+        { id: 'preset-editor-actions', name: '预设编辑顶部按钮', description: '预设编辑窗口顶部提供退出、重置和保存。' },
         { id: 'preset-entry-filter', name: '预设条目筛选', description: '在聊天补全的提示词管理器中搜索条目，按状态、角色和分区筛选。' },
         { id: 'world-info-mobile-layout', name: '手机世界书布局', description: '紧凑总控、页内选书和条目编辑排版。' },
         { id: 'editor-find-replace', name: '编辑器查找替换', description: '在正文编辑器中直接展开查找和替换。' },
@@ -24,7 +25,7 @@ async function startToolkit() {
         catch { enabled['floor-navigator'] = true; }
     }
     const initial = new Map(features.map(feature => [feature.id, enabled[feature.id] !== false]));
-    const moduleVersion = '1.0.23';
+    const moduleVersion = '1.0.27';
     const loaded = new Set();
     const actions = new Map();
 
